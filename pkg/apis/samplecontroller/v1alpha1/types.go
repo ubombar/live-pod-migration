@@ -23,32 +23,33 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Foo is a specification for a Foo resource
-type Foo struct {
+// LivePodMigration represents a live migration of a Pod
+type LivePodMigration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FooSpec   `json:"spec"`
-	Status FooStatus `json:"status"`
+	Spec   LivePodMigrationSpec   `json:"spec"`
+	Status LivePodMigrationStatus `json:"status"`
 }
 
-// FooSpec is the spec for a Foo resource
-type FooSpec struct {
-	DeploymentName string `json:"deploymentName"`
-	Replicas       *int32 `json:"replicas"`
+// LivePodMigration is the spec for a LivePodMigration resource
+type LivePodMigrationSpec struct {
+	PodName     string `json:"podName"`
+	ServiceName string `json:"serviceName"`
 }
 
-// FooStatus is the status for a Foo resource
-type FooStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+// LivePodMigrationStatus is the status for a LivePodMigration resource
+type LivePodMigrationStatus struct {
+	MigrationStatus  string `json:"migrationStatus"`
+	MigrationMessage string `json:"migrationMessage"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// FooList is a list of Foo resources
-type FooList struct {
+// LivePodMigrationList is a list of LivePodMigration resources
+type LivePodMigrationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Foo `json:"items"`
+	Items []LivePodMigration `json:"items"`
 }

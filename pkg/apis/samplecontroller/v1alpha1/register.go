@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	samplecontroller "k8s.io/sample-controller/pkg/apis/samplecontroller"
+	samplecontroller "github.com/ubombar/live-pod-migration/pkg/apis/samplecontroller"
 )
 
 // SchemeGroupVersion is group version used to register these objects
@@ -46,10 +46,10 @@ var (
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Foo{},
-		&FooList{},
-	)
+	// scheme.AddKnownTypes(SchemeGroupVersion,
+	// 	&LivePodMigration{},
+	// 	&LivePodMigrationList{},
+	// )
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
