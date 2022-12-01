@@ -27,8 +27,8 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
   github.com/ubombar/live-pod-migration/pkg/generated github.com/ubombar/live-pod-migration/pkg/apis \
-  samplecontroller:v1alpha1 \
-  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \
+  livepodmigration:v1alpha1 \
+  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../../../" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
 
 # To use your own boilerplate text append:
