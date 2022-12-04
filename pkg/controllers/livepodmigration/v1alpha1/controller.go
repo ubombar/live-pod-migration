@@ -76,7 +76,7 @@ type Controller struct {
 
 func NewController(
 	kubeclientset kubernetes.Interface,
-	livepodmigrationclientset clientset.Clientset,
+	lpmclientset clientset.Interface,
 	podInformer coreinformers.PodInformer,
 	livePodMigrationInformer informers.LivePodMigrationInformer) *Controller {
 
@@ -91,7 +91,7 @@ func NewController(
 
 	controller := &Controller{
 		kubeclientset:             kubeclientset,
-		livepodmigrationclientset: &livepodmigrationclientset,
+		livepodmigrationclientset: lpmclientset,
 
 		podsLister: podInformer.Lister(),
 		podsSynced: livePodMigrationInformer.Informer().HasSynced,
@@ -237,9 +237,9 @@ func (c *Controller) syncHandler(key string) error {
 
 	lpmCopy := lpm.DeepCopy()
 
-	// If the lpm newly created
 	if lpm.Status.MigrationStatus == "" {
-		err := c.checkEligibilityOfMigration(lpm)
+		// If the lpm is just created
+		err := c.checkEligibilityOfMigration(lpmCopy)
 		lpmCopy.Status = v1alphav1types.LivePodMigrationStatus{
 			MigrationStatus:  v1alphav1types.MigrationStatusPending,
 			MigrationMessage: "",
@@ -251,20 +251,30 @@ func (c *Controller) syncHandler(key string) error {
 			lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError
 			lpmCopy.Status.MigrationMessage = fmt.Sprint(err)
 		}
-		c.recorder.Event(lpm, corev1.EventTypeNormal, "SuccessSynced", "LPM object synced")
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Initiated")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCheckpointing {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Checkpointing")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusTransferring {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Transferring")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusRestoring {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Restoring")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCleaning {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Cleaning")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCompleted {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Completed")
+	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusError {
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Error")
+	} else {
+		// Unknown status, drop
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Uknown status received")
 	}
 
 	return nil
 }
 
-// initializes the lpm object and checks if the state of the cluster is eligible to migration
+// Checks if the state of the cluster is eligible to migration.
+// To see the list of which functions to check see the docs.
 func (c *Controller) checkEligibilityOfMigration(lpm *v1alphav1types.LivePodMigration) error {
-	// Check for the cluster state
-	// * livepodmigration migration should be configured YES
-	// * deamonsets on livepodmigration should be working YES
-	// * destination node should exist and schedulable YES
-	// * specified pod should exist and running YES
-
 	dsets, err := c.kubeclientset.AppsV1().DaemonSets(LivePodMigrationNamespace).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		klog.Error("cannot find")
