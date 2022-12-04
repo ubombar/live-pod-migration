@@ -16,15 +16,30 @@ type LivePodMigration struct {
 
 // LivePodMigration is the spec for a LivePodMigration resource
 type LivePodMigrationSpec struct {
-	PodName     string `json:"podName"`
-	ServiceName string `json:"serviceName"`
+	PodNamespace    string `json:"podNamespace"`
+	PodName         string `json:"podName"`
+	DestinationNode string `json:"destinationNode"`
+	ServiceName     string `json:"serviceName"`
 }
 
 // LivePodMigrationStatus is the status for a LivePodMigration resource
 type LivePodMigrationStatus struct {
-	MigrationStatus  string `json:"migrationStatus"`
-	MigrationMessage string `json:"migrationMessage"`
+	MigrationStatus  MigrationStatus `json:"migrationStatus"`
+	MigrationMessage string          `json:"migrationMessage"`
+	CheckpointFile   string          `json:"checkpointFile"`
+	PodAccessible    bool            `json:"podAccessible"`
 }
+
+type MigrationStatus string
+
+const (
+	MigrationStatusPending       MigrationStatus = "Pending"
+	MigrationStatusError         MigrationStatus = "Error"
+	MigrationStatusCheckpointing MigrationStatus = "Checkpointing"
+	MigrationStatusTransferring  MigrationStatus = "Transferring"
+	MigrationStatusRestoring     MigrationStatus = "Restoring"
+	MigrationStatusCompleted     MigrationStatus = "Completed"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
