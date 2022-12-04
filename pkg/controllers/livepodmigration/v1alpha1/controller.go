@@ -308,7 +308,7 @@ func (c *Controller) checkEligibilityOfMigration(lpm *v1alphav1types.LivePodMigr
 		return fmt.Errorf("destination node is unschedulable")
 	}
 
-	pod, err := c.kubeclientset.CoreV1().Pods(lpm.Spec.PodNamespace).Get(context.Background(), lpm.Spec.PodName, v1, v1.GetOptions{})
+	pod, err := c.kubeclientset.CoreV1().Pods(lpm.Spec.PodNamespace).Get(context.Background(), lpm.Spec.PodName, v1.GetOptions{})
 
 	if err != nil {
 		return fmt.Errorf("cannot find the described pod")
