@@ -38,6 +38,7 @@ const (
 	MigrationStatusCheckpointing MigrationStatus = "Checkpointing"
 	MigrationStatusTransferring  MigrationStatus = "Transferring"
 	MigrationStatusRestoring     MigrationStatus = "Restoring"
+	MigrationStatusCleaning      MigrationStatus = "Cleaning"
 	MigrationStatusCompleted     MigrationStatus = "Completed"
 )
 
