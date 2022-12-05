@@ -240,6 +240,7 @@ func (c *Controller) syncHandler(key string) error {
 	if lpm.Status.MigrationStatus == "" {
 		// If the lpm is just created
 		err := c.checkEligibilityOfMigration(lpmCopy)
+
 		lpmCopy.Status = v1alphav1types.LivePodMigrationStatus{
 			MigrationStatus:  v1alphav1types.MigrationStatusPending,
 			MigrationMessage: "",
@@ -251,7 +252,15 @@ func (c *Controller) syncHandler(key string) error {
 			lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError
 			lpmCopy.Status.MigrationMessage = fmt.Sprint(err)
 		}
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Initiated")
+
+		_, err = c.livepodmigrationclientset.LivepodmigrationV1alpha1().LivePodMigrations(namespace).UpdateStatus(context.Background(), lpmCopy, v1.UpdateOptions{})
+
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("cannot update the lpm object '%s'", err))
+			return nil
+		}
+
+		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", fmt.Sprintf("We have updated the object on namespace %s \n", namespace))
 	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCheckpointing {
 		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Checkpointing")
 	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusTransferring {
