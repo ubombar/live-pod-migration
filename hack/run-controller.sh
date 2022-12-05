@@ -17,7 +17,7 @@ fi
 
 
 echo "Building..."
-go build -o ${ROOT_DIR}/bin/controller ${ROOT_DIR}/cmd/livepodmigration
+go build -o ${ROOT_DIR}/bin/controller ${ROOT_DIR}/cmd/controller
 
 echo "Running..."
 eval ${ROOT_DIR}/bin/controller --kubeconfig $MINIKUBE_KUBECONFIG
