@@ -109,7 +109,7 @@ func NewController(
 	livePodMigrationInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueLivePodMigration,
 		UpdateFunc: func(oldObj, newObj interface{}) {
-
+			controller.workqueue.Add(newObj)
 		},
 	})
 
@@ -133,10 +133,6 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workqueue.ShutDown()
 
-	klog.V(4).Infoln("Starting Node Labeler Controller")
-
-	klog.V(4).Infoln("Waiting for informer caches to sync")
-
 	if ok := cache.WaitForCacheSync(stopCh, c.podsSynced, c.livePodMigrationSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
@@ -146,10 +142,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
-	klog.V(4).Infoln("Started workers")
 	<-stopCh
-	klog.V(4).Infoln("Shutting down workers")
-
 	return nil
 }
 
