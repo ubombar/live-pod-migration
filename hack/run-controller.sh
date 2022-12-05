@@ -12,7 +12,7 @@ vendoring="false"
 if [[ $vendoring == "true" ]]
 then 
     echo "Vendoring..."
-    # go mod vendor
+    go mod vendor
 fi 
 
 
