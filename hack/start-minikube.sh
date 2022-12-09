@@ -8,7 +8,7 @@ running=$( minikube status -p mentor | grep Running | wc -l )
 
 if [[ $running -lt 1 ]]
 then 
-    minikube start -p ${PROFILE} --feature-gates=ContainerCheckpoint=true
+    minikube start -p ${PROFILE} --feature-gates=ContainerCheckpoint=true,LocalStorageCapacityIsolation=true
     echo "> Cluster is now running."
 else 
     echo "> Cluster is already up and running."
