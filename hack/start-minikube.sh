@@ -4,7 +4,8 @@ PROFILE="mentor"
 
 echo "Checking if the cluster is up..."
 
-running=$( minikube status -p mentor | grep Running | wc -l )
+running=$( minikube status -p ${PROFILE} | grep Running | wc -l )
+
 
 if [[ $running -lt 1 ]]
 then 
