@@ -3,3 +3,14 @@ package adapter;
 
 option go_package = "./migrator/v1alpha1";
 
+service Migrator {
+    rpc ExchangeStatus (ExchangestatusRequest) returns (ExchangeStatusResponse);
+}
+
+message ExchangestatusRequest {
+ string status = 1;   
+}
+
+message ExchangeStatusResponse {
+ string status = 1;   
+}
