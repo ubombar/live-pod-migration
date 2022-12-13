@@ -1,5 +1,5 @@
 syntax = "proto3";
 package adapter;
 
-option go_package = "./";
+option go_package = "./migrator/v1alpha1";
 
