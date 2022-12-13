@@ -105,7 +105,7 @@ func NewMigrator(
 
 func (m *Migrator) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
-	defer c.workqueue.ShutDown()
+	defer m.workqueue.ShutDown()
 
 	if ok := cache.WaitForCacheSync(stopCh, m.livePodMigrationSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
@@ -139,7 +139,7 @@ func (m *Migrator) processNextWorkItem() bool {
 		// not call Forget if a transient error occurs, instead the item is
 		// put back on the workqueue and attempted again after a back-off
 		// period.
-		defer c.workqueue.Done(obj)
+		defer m.workqueue.Done(obj)
 		var key string
 		var ok bool
 		// We expect strings to come off the workqueue. These are of the
