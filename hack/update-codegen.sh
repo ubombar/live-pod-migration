@@ -25,7 +25,14 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 # --output-base    because this script should also be able to run inside the vendor dir of
 #                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
-bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
+bash "${CODEGEN_PKG}"/generate-groups.sh "client,informer,lister" \
+  github.com/ubombar/live-pod-migration/pkg/generated github.com/ubombar/live-pod-migration/pkg/apis \
+  livepodmigration:v1alpha1 \
+  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../../../" \
+  --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
+
+# Run only deepcopy
+bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy" \
   github.com/ubombar/live-pod-migration/pkg/generated github.com/ubombar/live-pod-migration/pkg/apis \
   livepodmigration:v1alpha1 \
   --output-base "$(dirname "${BASH_SOURCE[0]}")/../../../../" \
