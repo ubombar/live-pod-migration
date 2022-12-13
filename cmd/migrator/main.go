@@ -9,9 +9,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
+	migrator "github.com/ubombar/live-pod-migration/pkg/controllers/migrator/v1alpha1"
 	clientset "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned"
 	informers "github.com/ubombar/live-pod-migration/pkg/generated/informers/externalversions"
-	migrator "github.com/ubombar/live-pod-migration/pkg/migrator/v1alpha1"
 	"github.com/ubombar/live-pod-migration/pkg/signals"
 )
 
