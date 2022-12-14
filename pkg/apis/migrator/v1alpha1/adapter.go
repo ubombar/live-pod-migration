@@ -18,7 +18,7 @@ type MigratorAdapterConfig struct {
 }
 
 // This is the migrator adapter. A stateful adapter interface for client and server
-// migrator communication.
+// migrator communication as well as kubernetes.
 type MigrationAdapter interface {
 	// Initialize the variables for implementation.
 	Configure(mc *MigratorAdapterConfig) bool
@@ -38,6 +38,10 @@ type MigrationAdapter interface {
 
 	// From this point we have migration related functions.
 
+	InitiateMigration() bool
+
+	// Blocking function. Reads and transmits the checkpoint file.
+	TransitCheckpoint() bool
 }
 
 type MigrationAdapterRPC struct {
