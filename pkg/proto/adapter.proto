@@ -4,7 +4,33 @@ package adapter;
 option go_package = "./migrator/v1alpha1";
 
 service Migrator {
+    rpc InitiateMigration (InitiateMigrationRequest) returns (InitiateMigrationResponse);
+
+    // Send the checkpoint file by file. In the future this can also serve memory pages.
+    rpc TransitCheckpoint (stream TransitCheckpointRequest) returns (stream TransitCheckpointResponse);
+
+    // This is for exchanging status information.
     rpc ExchangeStatus (ExchangestatusRequest) returns (ExchangeStatusResponse);
+
+    // Gets ok or error from the peer
+    rpc ShouldClose (ShouldCloseRequest) returns (stream ShouldCloseResponse);
+
+}
+
+message InitiateMigrationRequest {
+    
+}
+
+message InitiateMigrationResponse {
+    
+}
+
+message TransitCheckpointRequest {
+    
+}
+
+message TransitCheckpointResponse {
+    
 }
 
 message ExchangestatusRequest {
@@ -13,4 +39,12 @@ message ExchangestatusRequest {
 
 message ExchangeStatusResponse {
  string status = 1;   
+}
+
+message ShouldCloseRequest {
+
+}
+
+message ShouldCloseResponse {
+    
 }
