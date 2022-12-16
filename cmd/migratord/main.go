@@ -1,13 +1,9 @@
 package main
 
-import "flag"
-
-var 
+import (
+	"fmt"
+)
 
 func main() {
-	fmt.Println("test")
-}
-
-func init() {
-	flag.Pa
+	fmt.Println("migratord")
 }
