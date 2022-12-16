@@ -15,4 +15,5 @@
 vendor/
 vendor/modules.txt
 bin/**
-main.go
+
+.old_hack
