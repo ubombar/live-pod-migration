@@ -19,6 +19,7 @@ type Migratord struct {
 	Address          string
 	Port             int
 
+	// These are handlers for client and server roles in migration.
 	serverHandler *serverMigationHandler
 	clientHandler *clientMigationHandler
 
