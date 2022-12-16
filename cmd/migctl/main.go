@@ -21,11 +21,16 @@ func main() {
 	client := pb.NewMigratorServiceClient(conn)
 	defer conn.Close()
 
-	resp, _ := client.MigrationJob(context.Background(), &pb.MigrationJobRequest{
-		IncomingIp:    "localhost",
-		FromMigratord: pb.MigrationJobSource_SOURCE_MIGCTL,
+	resp, err := client.CreateMigrationJob(context.Background(), &pb.CreateMigrationJobRequest{
+		PeerAddress: "localhost",
+		PeerPort:    4545,
+		ContainerId: "59bca86ed5aa",
 	})
 
-	fmt.Printf("resp.Accepted: %v\n", resp.Accepted)
+	if err != nil {
+		fmt.Printf("err: %v\n", err)
+		return
+	}
 
+	fmt.Printf("resp.Accepted: %v\n", resp)
 }
