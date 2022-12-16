@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
@@ -10,15 +11,16 @@ import (
 )
 
 func main() {
-	fmt.Println("migctl")
+	var addrClient, addrServer string
+	var portClient, portServer int
 
-	addressClient := "localhost"
-	portClient := 4545
+	// Default values are for debugging
+	flag.StringVar(&addrClient, "addrc", "localhost", "Client address")
+	flag.StringVar(&addrServer, "addrs", "localhost", "Server address")
+	flag.IntVar(&portClient, "portc", 4545, "Client address")
+	flag.IntVar(&portServer, "ports", 4546, "Server port")
 
-	addressServer := "localhost"
-	portServer := 4546
-
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", addressClient, portClient), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", addrClient, portClient), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		panic(err)
@@ -28,7 +30,7 @@ func main() {
 	defer conn.Close()
 
 	resp, err := client.CreateMigrationJob(context.Background(), &pb.CreateMigrationJobRequest{
-		PeerAddress: addressServer,
+		PeerAddress: addrServer,
 		PeerPort:    int32(portServer),
 		ContainerId: "59bca86ed5aa",
 	})

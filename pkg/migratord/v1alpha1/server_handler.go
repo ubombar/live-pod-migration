@@ -2,12 +2,12 @@ package v1alpha1
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
 	"google.golang.org/grpc"
@@ -74,7 +74,7 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 	// Add the migration to the queue
 	m.parent.MigrationQueue.Push(migObject)
 
-	logrus.Printf("New migration accepted as client. Migration id %s\n", resp.MigrationId[:10])
+	logrus.Printf("New migration accepted as client. Migration id %s\n", resp.MigrationId)
 
 	return &pb.CreateMigrationJobResponse{Accepted: true}, nil
 }
@@ -106,12 +106,14 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 
 	// Create the migrationid from migration string, might need work here...
 	creationDate := time.Now()
-	createDateString := fmt.Sprint(creationDate.Nanosecond())
-	hash := sha256.New()
-	hash.Write([]byte(req.ContainerId))
-	hash.Write([]byte(req.ContainerImage))
-	byteArray := hash.Sum([]byte(createDateString))
-	migrationId := fmt.Sprintf("%x", byteArray)
+	// createDateString := fmt.Sprint(creationDate.Nanosecond())
+	// hash := sha256.New()
+	// hash.Write([]byte(req.ContainerId))
+	// hash.Write([]byte(req.ContainerImage))
+	// byteArray := hash.Sum([]byte(createDateString))
+	// migrationId := fmt.Sprintf("%x", byteArray)
+
+	migrationId := uuid.New().String()
 
 	// Create the migration object
 	migObject := &Migration{
@@ -128,7 +130,7 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 	// Add the migration to the migration map
 	m.parent.MigrationMap.Save(migObject)
 
-	logrus.Printf("New migration accepted as server. Migration id %s\n", migrationId[:10])
+	logrus.Printf("New migration accepted as server. Migration id %s\n", migrationId)
 
 	return &pb.ShareMigrationJobResponse{
 		Accepted:        true,

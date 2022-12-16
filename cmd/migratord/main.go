@@ -11,6 +11,7 @@ func main() {
 	var address string
 	var port int
 
+	// TODO: Add a way to add docker client information
 	flag.StringVar(&address, "address", "localhost", "Specifies the node address which the migratord is running.")
 	flag.IntVar(&port, "port", 4545, "Specifies the port which the migratord is listening.")
 	flag.Parse()
