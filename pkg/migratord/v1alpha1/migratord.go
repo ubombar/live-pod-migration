@@ -14,7 +14,7 @@ type Migratord struct {
 	ClientAPIVersion string
 
 	// Incoming queue
-
+	IncomingMigrations *MigrationQueue
 }
 
 func NewMigratord() (*Migratord, error) {
@@ -34,11 +34,24 @@ func NewMigratord() (*Migratord, error) {
 		return nil, errors.New("experimental mode is not eabled on node")
 	}
 
+	queue, err := NewMigrationQueue(DefaultMigrationQueueCapacity)
+
+	if err != nil {
+		return nil, err
+	}
+
 	migratord := &Migratord{
-		Client:           cl,
-		OSType:           ping.OSType,
-		ClientAPIVersion: ping.APIVersion,
+		Client:             cl,
+		OSType:             ping.OSType,
+		ClientAPIVersion:   ping.APIVersion,
+		IncomingMigrations: queue,
 	}
 
 	return migratord, nil
+}
+
+// Listens for incoming requests. If the request comes from another migratord then it will act like a server.
+// If it comes from someone else, then it will act tike a client.
+func (m *Migration) Run() {
+	// Wait for a gRPC connection,
 }

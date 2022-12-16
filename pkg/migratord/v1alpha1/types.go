@@ -7,6 +7,10 @@ import (
 )
 
 const (
+	DefaultMigrationQueueCapacity = 16
+)
+
+const (
 	Pending       = "Peding"
 	Checkpointing = "Checkpointing"
 	Transfering   = "Transfering"
@@ -40,7 +44,7 @@ type Migration struct {
 
 type MigrationQueue struct {
 	mutex sync.Mutex
-	queue chan Migration
+	queue chan *Migration
 }
 
 func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
@@ -50,12 +54,32 @@ func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
 
 	queue := &MigrationQueue{
 		mutex: sync.Mutex{},
-		queue: make(chan Migration, maxLength),
+		queue: make(chan *Migration, maxLength),
 	}
 
 	return queue, nil
 }
 
-func (q *MigrationQueue) Push(m Migration) bool {
+func (q *MigrationQueue) Push(m *Migration) bool {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
+	if len(q.queue) == cap(q.queue) {
+		return false
+	}
+
+	q.queue <- m
+	return true
+}
+
+func (q *MigrationQueue) Pop() (*Migration, bool) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	if len(q.queue) == 0 {
+		return nil, false
+	}
+
+	m := <-q.queue
+	return m, true
 }
