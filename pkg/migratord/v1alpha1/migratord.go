@@ -2,13 +2,17 @@ package v1alpha1
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // This will run as a system deamon. Checks incoming client and server migration requests.
@@ -102,8 +106,41 @@ func (m *MigratordRPC) CreateMigrationJob(ctx context.Context, req *pb.CreateMig
 	}
 
 	// Assuming everything is perfect and we are able to share this migration information with out peer migrator.
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", req.PeerAddress, req.PeerPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return nil, nil
+	if err != nil {
+		return nil, errors.New("cannot reach peer")
+	}
+
+	client := pb.NewMigratorServiceClient(conn)
+
+	resp, err := client.ShareMigrationJob(ctx, &pb.ShareMigrationJobRequest{
+		PeerAddress:    m.parent.Address,
+		PeerPort:       int32(m.parent.Port),
+		ContainerId:    containerJSON.Image,
+		ContainerImage: containerJSON.Image,
+		ContainerName:  containerJSON.Name,
+	})
+
+	if err != nil || !resp.Accepted {
+		return nil, errors.New("peer does not accept the migration job")
+	}
+
+	// Create the migration object
+	migObject := &Migration{
+		ClientIP:     req.PeerAddress,
+		ServerIP:     m.parent.Address,
+		MigrationId:  resp.MigrationId,
+		ContainerID:  req.ContainerId,
+		Status:       Pending,
+		Running:      true,
+		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
+	}
+
+	// Add the migration to the queue
+	m.parent.IncomingMigrations.Push(migObject)
+
+	return &pb.CreateMigrationJobResponse{Accepted: true}, nil
 }
 
 func (m *MigratordRPC) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRequest) (*pb.ShareMigrationJobResponse, error) {
@@ -111,5 +148,51 @@ func (m *MigratordRPC) ShareMigrationJob(ctx context.Context, req *pb.ShareMigra
 		return nil, errors.New("incoming request is nil")
 	}
 
-	return nil, nil
+	images, err := m.parent.Client.ImageList(ctx, types.ImageListOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	containsImage := false
+
+	for _, image := range images {
+		if image.ID == req.ContainerImage {
+			containsImage = true
+			break
+		}
+	}
+
+	if !containsImage {
+		fmt.Println("Warning, the server migrator doesn't have the specified image!")
+	}
+
+	// Create the migrationid from migration string, might need work here...
+	creationDate := time.Now()
+	createDateString := fmt.Sprint(creationDate.Nanosecond())
+	hash := sha256.New()
+	hash.Write([]byte(req.ContainerId))
+	hash.Write([]byte(req.ContainerImage))
+	byteArray := hash.Sum([]byte(createDateString))
+	migrationId := fmt.Sprintf("%x", byteArray)
+
+	// Create the migration object
+	migObject := &Migration{
+		ClientIP:     req.PeerAddress,
+		ServerIP:     m.parent.Address,
+		MigrationId:  migrationId,
+		ContainerID:  req.ContainerId,
+		Status:       Pending,
+		Running:      true,
+		CreationDate: creationDate,
+	}
+
+	// Add the migration to the queue
+	m.parent.IncomingMigrations.Push(migObject)
+
+	return &pb.ShareMigrationJobResponse{
+		Accepted:        true,
+		MigrationId:     migrationId,
+		CreatonUnixTime: creationDate.Unix(),
+	}, nil
 }
