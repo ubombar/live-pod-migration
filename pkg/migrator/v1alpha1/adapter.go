@@ -1,7 +1,5 @@
 package v1alpha1
 
-import "github.com/ubombar/live-pod-migration/pkg/apis/livepodmigration/v1alpha1"
-
 const (
 	StatusPending       = "StatusPending"
 	StatusCheckpointing = "StatusCheckpointing"
@@ -22,8 +20,6 @@ type MigratorAdapterConfig struct {
 
 	// Denotes if the current instance acts as a client
 	IsClient bool
-
-	LPMInfo *v1alpha1.LivePodMigration
 }
 
 // This is the migrator adapter. A stateful adapter interface for client and server
