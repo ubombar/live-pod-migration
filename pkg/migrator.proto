@@ -3,10 +3,10 @@ syntax = "proto3";
 option go_package = ".";
 
 service MigratorService {
-    // When migctl creates a migration job, it will use this method.
+    // Tells any migratord to get in client role.
     rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
 
-    // When the migrationd wants to share the migration with it's peer it uses this method.
+    // Migratord with client role invokes it's peer. If works it's peer gets in a server role.
     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
 }
 
@@ -20,7 +20,6 @@ message CreateMigrationJobResponse {
     bool accepted = 1;
 }
 
-// Client sends this to server
 message ShareMigrationJobRequest {
     string peer_address = 1;
     int32 peer_port = 2;
