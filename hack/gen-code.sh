@@ -7,7 +7,7 @@ SRC_DIR=$( pwd )
 
 PROTO_PATH="./pkg"
 PROTO_FILE="$PROTO_PATH/migrator.proto"
-DST_DIR="$SRC_DIR/pkg/grpc"
+DST_DIR="$SRC_DIR/pkg/migrator"
 
 # Create directory
 mkdir -p $DST_DIR

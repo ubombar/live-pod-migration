@@ -3,19 +3,30 @@ syntax = "proto3";
 option go_package = ".";
 
 service MigratorService {
-    rpc MigrationJob (MigrationJobRequest) returns (MigrationJobResponse);
+    // When migctl creates a migration job, it will use this method.
+    rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
+
+    // When the migrationd wants to share the migration with it's peer it uses this method.
+    rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
 }
 
-enum MigrationJob {
-    from_migratord = 0;
-    from_migctl = 1;
+message CreateMigrationJobRequest {
+    string migration_ip = 1;
+    string container_id = 2;
 }
 
-message MigrationJobRequest {
-    string incoming_ip = 1;
-    MigrationJob from_migratord = 2;
+message CreateMigrationJobResponse {
+    bool accepted = 1;
 }
 
-message MigrationJobResponse {
+// Client sends this to server
+message ShareMigrationJobRequest {
+    // Clients ip address
+    string peer_ip = 1;
+    string container_id = 2;
+    string container_image = 3;
+}
+
+message ShareMigrationJobResponse {
     bool accepted = 1;
 }
