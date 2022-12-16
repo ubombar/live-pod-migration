@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = ".";
+
+service MigratorService {
+    rpc MigrationJob (MigrationJobRequest) returns (MigrationJobResponse);
+}
+
+enum MigrationJob {
+    from_migratord = 0;
+    from_migctl = 1;
+}
+
+message MigrationJobRequest {
+    string incoming_ip = 1;
+    MigrationJob from_migratord = 2;
+}
+
+message MigrationJobResponse {
+    bool accepted = 1;
+}
