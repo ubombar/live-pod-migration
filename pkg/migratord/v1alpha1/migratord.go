@@ -135,6 +135,7 @@ func (m *MigratordRPC) CreateMigrationJob(ctx context.Context, req *pb.CreateMig
 		Status:       Pending,
 		Running:      true,
 		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
+		Role:         RoleClient,
 	}
 
 	// Add the migration to the queue
@@ -185,6 +186,7 @@ func (m *MigratordRPC) ShareMigrationJob(ctx context.Context, req *pb.ShareMigra
 		Status:       Pending,
 		Running:      true,
 		CreationDate: creationDate,
+		Role:         RoleServer,
 	}
 
 	// Add the migration to the queue

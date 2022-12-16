@@ -21,6 +21,13 @@ const (
 
 type MigrationStatus string
 
+const (
+	RoleClient = "Role Client"
+	RoleServer = "Role Server"
+)
+
+type MigrationRole string
+
 type Migration struct {
 	// Used for describing the migration
 	MigrationId string
@@ -35,11 +42,14 @@ type Migration struct {
 	// Migration status describes in which stage migration is
 	Status MigrationStatus
 
-	// Shows if the container is running.
+	// Shows if the container is running
 	Running bool
 
 	// Creation date
 	CreationDate time.Time
+
+	// Role of the migratord that owns this object
+	Role MigrationRole
 }
 
 type MigrationQueue struct {
