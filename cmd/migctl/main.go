@@ -12,7 +12,13 @@ import (
 func main() {
 	fmt.Println("migctl")
 
-	conn, err := grpc.Dial("localhost:4545", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addressClient := "localhost"
+	portClient := 4545
+
+	addressServer := "localhost"
+	portServer := 4546
+
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", addressClient, portClient), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		panic(err)
@@ -22,8 +28,8 @@ func main() {
 	defer conn.Close()
 
 	resp, err := client.CreateMigrationJob(context.Background(), &pb.CreateMigrationJobRequest{
-		PeerAddress: "localhost",
-		PeerPort:    4545,
+		PeerAddress: addressServer,
+		PeerPort:    int32(portServer),
 		ContainerId: "59bca86ed5aa",
 	})
 

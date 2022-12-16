@@ -53,6 +53,12 @@ func NewMigratord(address string, port int) (*Migratord, error) {
 		return nil, err
 	}
 
+	mmap, err := NewMigrationMap()
+
+	if err != nil {
+		return nil, err
+	}
+
 	serverHandler := &serverMigationHandler{}
 	clientHandler := &clientMigationHandler{}
 
@@ -61,6 +67,7 @@ func NewMigratord(address string, port int) (*Migratord, error) {
 		OSType:           ping.OSType,
 		ClientAPIVersion: ping.APIVersion,
 		MigrationQueue:   queue,
+		MigrationMap:     mmap,
 		Address:          address,
 		Port:             port,
 		serverHandler:    serverHandler,

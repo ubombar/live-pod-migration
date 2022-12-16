@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/sirupsen/logrus"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,6 +24,8 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 	if req == nil {
 		return nil, errors.New("incoming request is nil")
 	}
+
+	logrus.Println("New migration job received.")
 
 	// Preflight checks
 	containerJSON, err := m.parent.Client.ContainerInspect(ctx, req.ContainerId)
@@ -70,6 +73,8 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 
 	// Add the migration to the queue
 	m.parent.MigrationQueue.Push(migObject)
+
+	logrus.Printf("New migration accepted as client. Migration id %s\n", resp.MigrationId[:10])
 
 	return &pb.CreateMigrationJobResponse{Accepted: true}, nil
 }
@@ -122,6 +127,8 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 
 	// Add the migration to the migration map
 	m.parent.MigrationMap.Save(migObject)
+
+	logrus.Printf("New migration accepted as server. Migration id %s\n", migrationId[:10])
 
 	return &pb.ShareMigrationJobResponse{
 		Accepted:        true,
