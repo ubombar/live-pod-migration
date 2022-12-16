@@ -93,3 +93,38 @@ func (q *MigrationQueue) Pop() (*Migration, bool) {
 	m := <-q.queue
 	return m, true
 }
+
+type MigrationMap struct {
+	mutex sync.Mutex
+	mmap  map[string]*Migration
+}
+
+func NewMigrationMap() (*MigrationMap, error) {
+	mmap := &MigrationMap{
+		mutex: sync.Mutex{},
+		mmap:  make(map[string]*Migration),
+	}
+
+	return mmap, nil
+}
+
+func (q *MigrationMap) Get(migrationId string) (*Migration, bool) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	migration, ok := q.mmap[migrationId]
+	return migration, ok
+}
+
+func (q *MigrationMap) Save(m *Migration) bool {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	if _, ok := q.mmap[m.MigrationId]; ok {
+		return false
+	}
+
+	q.mmap[m.MigrationId] = m
+
+	return true
+}

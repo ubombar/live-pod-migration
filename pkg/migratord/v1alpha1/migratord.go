@@ -25,8 +25,11 @@ type Migratord struct {
 
 	handler *MigratordRPC
 
-	// Incoming queue
-	IncomingMigrations *MigrationQueue
+	// Incoming queue, for managing migrations actively. Only used by client role migrator.
+	MigrationQueue *MigrationQueue
+
+	// This is for passively managed migration. If the migrator is in server role.
+	MigrationMap *MigrationMap
 }
 
 func NewMigratord(address string, port int) (*Migratord, error) {
@@ -55,13 +58,13 @@ func NewMigratord(address string, port int) (*Migratord, error) {
 	handler := &MigratordRPC{}
 
 	migratord := &Migratord{
-		Client:             cl,
-		OSType:             ping.OSType,
-		ClientAPIVersion:   ping.APIVersion,
-		IncomingMigrations: queue,
-		Address:            address,
-		Port:               port,
-		handler:            handler,
+		Client:           cl,
+		OSType:           ping.OSType,
+		ClientAPIVersion: ping.APIVersion,
+		MigrationQueue:   queue,
+		Address:          address,
+		Port:             port,
+		handler:          handler,
 	}
 
 	// Set the inverse pointer so migratord will be accessible from hane gRPC handler.
@@ -78,6 +81,7 @@ type MigratordRPC struct {
 // Listens for incoming requests. If the request comes from another migratord then it will act like a server.
 // If it comes from someone else, then it will act tike a client.
 func (m *Migratord) Run() {
+	// Before listening this will
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", m.Address, m.Port))
 
 	if err != nil {
@@ -89,6 +93,7 @@ func (m *Migratord) Run() {
 	server.Serve(lis)
 }
 
+// Tells any migratord to get in client role.
 func (m *MigratordRPC) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error) {
 	if req == nil {
 		return nil, errors.New("incoming request is nil")
@@ -139,11 +144,12 @@ func (m *MigratordRPC) CreateMigrationJob(ctx context.Context, req *pb.CreateMig
 	}
 
 	// Add the migration to the queue
-	m.parent.IncomingMigrations.Push(migObject)
+	m.parent.MigrationQueue.Push(migObject)
 
 	return &pb.CreateMigrationJobResponse{Accepted: true}, nil
 }
 
+// Migratord with client role invokes it's peer. If works it's peer gets in a server role.
 func (m *MigratordRPC) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRequest) (*pb.ShareMigrationJobResponse, error) {
 	if req == nil {
 		return nil, errors.New("incoming request is nil")
@@ -189,8 +195,8 @@ func (m *MigratordRPC) ShareMigrationJob(ctx context.Context, req *pb.ShareMigra
 		Role:         RoleServer,
 	}
 
-	// Add the migration to the queue
-	m.parent.IncomingMigrations.Push(migObject)
+	// Add the migration to the migration map
+	m.parent.MigrationMap.Save(migObject)
 
 	return &pb.ShareMigrationJobResponse{
 		Accepted:        true,
