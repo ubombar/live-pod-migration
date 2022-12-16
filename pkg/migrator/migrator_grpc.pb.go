@@ -22,9 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigratorServiceClient interface {
-	// When migctl creates a migration job, it will use this method.
+	// Tells any migratord to get in client role.
 	CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error)
-	// When the migrationd wants to share the migration with it's peer it uses this method.
+	// Migratord with client role invokes it's peer. If works it's peer gets in a server role.
 	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
 }
 
@@ -58,9 +58,9 @@ func (c *migratorServiceClient) ShareMigrationJob(ctx context.Context, in *Share
 // All implementations must embed UnimplementedMigratorServiceServer
 // for forward compatibility
 type MigratorServiceServer interface {
-	// When migctl creates a migration job, it will use this method.
+	// Tells any migratord to get in client role.
 	CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error)
-	// When the migrationd wants to share the migration with it's peer it uses this method.
+	// Migratord with client role invokes it's peer. If works it's peer gets in a server role.
 	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
 }

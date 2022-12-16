@@ -130,7 +130,6 @@ func (x *CreateMigrationJobResponse) GetAccepted() bool {
 	return false
 }
 
-// Client sends this to server
 type ShareMigrationJobRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
