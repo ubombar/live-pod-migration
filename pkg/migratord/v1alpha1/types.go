@@ -11,7 +11,7 @@ const (
 )
 
 const (
-	Pending       = "Peding"
+	Preparing     = "Preparing"
 	Checkpointing = "Checkpointing"
 	Transfering   = "Transfering"
 	Restoring     = "Restoring"
@@ -20,6 +20,14 @@ const (
 )
 
 type MigrationStatus string
+
+const (
+	Basic    = "Basic"
+	Precopy  = "Precopy"
+	Postcopy = "Postcopy"
+)
+
+type MigrationMethod string
 
 const (
 	RoleClient = "Role Client"
@@ -50,6 +58,9 @@ type MigrationJob struct {
 
 	// Role of the migratord that owns this object
 	Role MigrationRole
+
+	// How the migration will be performed
+	Method MigrationMethod
 }
 
 type MigrationQueue struct {

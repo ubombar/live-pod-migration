@@ -59,16 +59,28 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 		return nil, errors.New("peer does not accept the migration job")
 	}
 
+	var migrationMethod MigrationMethod
+
+	switch req.Method {
+	case pb.MigrationMethod_Basic:
+		migrationMethod = Basic
+	case pb.MigrationMethod_Precopy:
+		migrationMethod = Precopy
+	case pb.MigrationMethod_Postcopy:
+		migrationMethod = Postcopy
+	}
+
 	// Create the migration object
 	migObject := &MigrationJob{
 		ClientIP:     req.PeerAddress,
 		ServerIP:     m.parent.Address,
 		MigrationId:  resp.MigrationId,
 		ContainerID:  req.ContainerId,
-		Status:       Pending,
+		Status:       Preparing,
 		Running:      true,
 		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
 		Role:         RoleClient,
+		Method:       migrationMethod,
 	}
 
 	// Add the migration to the queue
@@ -104,16 +116,20 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		fmt.Println("Warning, the server migrator doesn't have the specified image!")
 	}
 
-	// Create the migrationid from migration string, might need work here...
+	// Create the migrationid from migration string.
 	creationDate := time.Now()
-	// createDateString := fmt.Sprint(creationDate.Nanosecond())
-	// hash := sha256.New()
-	// hash.Write([]byte(req.ContainerId))
-	// hash.Write([]byte(req.ContainerImage))
-	// byteArray := hash.Sum([]byte(createDateString))
-	// migrationId := fmt.Sprintf("%x", byteArray)
-
 	migrationId := uuid.New().String()
+
+	var migrationMethod MigrationMethod
+
+	switch req.Method {
+	case pb.MigrationMethod_Basic:
+		migrationMethod = Basic
+	case pb.MigrationMethod_Precopy:
+		migrationMethod = Precopy
+	case pb.MigrationMethod_Postcopy:
+		migrationMethod = Postcopy
+	}
 
 	// Create the migration object
 	migObject := &MigrationJob{
@@ -121,10 +137,11 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		ServerIP:     m.parent.Address,
 		MigrationId:  migrationId,
 		ContainerID:  req.ContainerId,
-		Status:       Pending,
+		Status:       Preparing,
 		Running:      true,
 		CreationDate: creationDate,
 		Role:         RoleServer,
+		Method:       migrationMethod,
 	}
 
 	// Add the migration to the migration map
