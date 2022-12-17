@@ -16,10 +16,17 @@ service MigratorService {
     rpc SendViaSCP (SendViaSCPRequest) returns (SendViaSCPResponse);
 }
 
+enum MigrationMethod {
+    Basic = 0;
+    Precopy = 1;
+    Postcopy = 2;
+}
+
 message CreateMigrationJobRequest {
     string peer_address = 1;
     int32 peer_port = 2;
     string container_id = 3;
+    MigrationMethod method = 4;
 }
 
 message CreateMigrationJobResponse {
@@ -32,6 +39,7 @@ message ShareMigrationJobRequest {
     string container_id = 3;
     string container_image = 4;
     string container_name = 5;
+    MigrationMethod method = 6;
 }
 
 message ShareMigrationJobResponse {
