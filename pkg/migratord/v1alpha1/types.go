@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"errors"
+	"sync"
 	"time"
 )
 
@@ -52,7 +53,7 @@ type Migration struct {
 }
 
 type MigrationQueue struct {
-	// mutex sync.Mutex
+	mutex sync.Mutex
 	queue chan *Migration
 }
 
@@ -62,7 +63,7 @@ func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
 	}
 
 	queue := &MigrationQueue{
-		// mutex: sync.Mutex{},
+		mutex: sync.Mutex{},
 		queue: make(chan *Migration, maxLength),
 	}
 
@@ -70,9 +71,6 @@ func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
 }
 
 func (q *MigrationQueue) Push(m *Migration) bool {
-	// q.mutex.Lock()
-	// defer q.mutex.Unlock()
-
 	if len(q.queue) == cap(q.queue) {
 		return false
 	}
@@ -83,16 +81,13 @@ func (q *MigrationQueue) Push(m *Migration) bool {
 
 // Blocking
 func (q *MigrationQueue) Pop() *Migration {
-	// q.mutex.Lock()
-	// defer q.mutex.Unlock()
-
 	m := <-q.queue
 	return m
 }
 
 func (q *MigrationQueue) PopNonBlock() (*Migration, bool) {
-	// q.mutex.Lock()
-	// defer q.mutex.Unlock()
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
 	if len(q.queue) == 0 {
 		return nil, false
@@ -103,30 +98,30 @@ func (q *MigrationQueue) PopNonBlock() (*Migration, bool) {
 }
 
 type MigrationMap struct {
-	// mutex sync.Mutex
-	mmap map[string]*Migration
+	mutex sync.Mutex
+	mmap  map[string]*Migration
 }
 
 func NewMigrationMap() (*MigrationMap, error) {
 	mmap := &MigrationMap{
-		// mutex: sync.Mutex{},
-		mmap: make(map[string]*Migration),
+		mutex: sync.Mutex{},
+		mmap:  make(map[string]*Migration),
 	}
 
 	return mmap, nil
 }
 
 func (q *MigrationMap) Get(migrationId string) (*Migration, bool) {
-	// q.mutex.Lock()
-	// defer q.mutex.Unlock()
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
 	migration, ok := q.mmap[migrationId]
 	return migration, ok
 }
 
 func (q *MigrationMap) Save(m *Migration) bool {
-	// q.mutex.Lock()
-	// defer q.mutex.Unlock()
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
 
 	if _, ok := q.mmap[m.MigrationId]; ok {
 		return false
