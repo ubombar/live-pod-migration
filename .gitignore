@@ -16,3 +16,4 @@ vendor
 bin/**
 
 .old_hack
+main.go
