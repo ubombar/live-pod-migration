@@ -4,12 +4,6 @@ type clientMigationHandler struct {
 	parent *Migratord
 }
 
-func (h *clientMigationHandler) PerformMigration(migration *Migration) {
-	// Docker checkpoint
-
-	// Checkpoint Transfer
-
-	// Restore on server
-
-	// Done!
+func (h *clientMigationHandler) PerformMigration(migration *MigrationJob) {
+	//
 }

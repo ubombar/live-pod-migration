@@ -28,7 +28,7 @@ const (
 
 type MigrationRole string
 
-type Migration struct {
+type MigrationJob struct {
 	// Used for describing the migration
 	MigrationId string
 
@@ -54,7 +54,7 @@ type Migration struct {
 
 type MigrationQueue struct {
 	mutex sync.Mutex
-	queue chan *Migration
+	queue chan *MigrationJob
 }
 
 func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
@@ -64,13 +64,13 @@ func NewMigrationQueue(maxLength int) (*MigrationQueue, error) {
 
 	queue := &MigrationQueue{
 		mutex: sync.Mutex{},
-		queue: make(chan *Migration, maxLength),
+		queue: make(chan *MigrationJob, maxLength),
 	}
 
 	return queue, nil
 }
 
-func (q *MigrationQueue) Push(m *Migration) bool {
+func (q *MigrationQueue) Push(m *MigrationJob) bool {
 	if len(q.queue) == cap(q.queue) {
 		return false
 	}
@@ -80,12 +80,12 @@ func (q *MigrationQueue) Push(m *Migration) bool {
 }
 
 // Blocking
-func (q *MigrationQueue) Pop() *Migration {
+func (q *MigrationQueue) Pop() *MigrationJob {
 	m := <-q.queue
 	return m
 }
 
-func (q *MigrationQueue) PopNonBlock() (*Migration, bool) {
+func (q *MigrationQueue) PopNonBlock() (*MigrationJob, bool) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -99,19 +99,19 @@ func (q *MigrationQueue) PopNonBlock() (*Migration, bool) {
 
 type MigrationMap struct {
 	mutex sync.Mutex
-	mmap  map[string]*Migration
+	mmap  map[string]*MigrationJob
 }
 
 func NewMigrationMap() (*MigrationMap, error) {
 	mmap := &MigrationMap{
 		mutex: sync.Mutex{},
-		mmap:  make(map[string]*Migration),
+		mmap:  make(map[string]*MigrationJob),
 	}
 
 	return mmap, nil
 }
 
-func (q *MigrationMap) Get(migrationId string) (*Migration, bool) {
+func (q *MigrationMap) Get(migrationId string) (*MigrationJob, bool) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -119,7 +119,7 @@ func (q *MigrationMap) Get(migrationId string) (*Migration, bool) {
 	return migration, ok
 }
 
-func (q *MigrationMap) Save(m *Migration) bool {
+func (q *MigrationMap) Save(m *MigrationJob) bool {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 

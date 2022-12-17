@@ -60,7 +60,7 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 	}
 
 	// Create the migration object
-	migObject := &Migration{
+	migObject := &MigrationJob{
 		ClientIP:     req.PeerAddress,
 		ServerIP:     m.parent.Address,
 		MigrationId:  resp.MigrationId,
@@ -116,7 +116,7 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 	migrationId := uuid.New().String()
 
 	// Create the migration object
-	migObject := &Migration{
+	migObject := &MigrationJob{
 		ClientIP:     req.PeerAddress,
 		ServerIP:     m.parent.Address,
 		MigrationId:  migrationId,
