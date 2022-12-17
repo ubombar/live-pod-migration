@@ -26,6 +26,10 @@ type MigratorServiceClient interface {
 	CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error)
 	// Migratord with client role invokes it's peer. If works it's peer gets in a server role.
 	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
+	// Updates the status of the migration, invoked in server.
+	UpdateMigrationStatus(ctx context.Context, in *UpdateMigrationStatusRequest, opts ...grpc.CallOption) (*UpdateMigrationStatusResponse, error)
+	// Stream the checkpoint file
+	SendViaSCP(ctx context.Context, in *SendViaSCPRequest, opts ...grpc.CallOption) (*SendViaSCPResponse, error)
 }
 
 type migratorServiceClient struct {
@@ -54,6 +58,24 @@ func (c *migratorServiceClient) ShareMigrationJob(ctx context.Context, in *Share
 	return out, nil
 }
 
+func (c *migratorServiceClient) UpdateMigrationStatus(ctx context.Context, in *UpdateMigrationStatusRequest, opts ...grpc.CallOption) (*UpdateMigrationStatusResponse, error) {
+	out := new(UpdateMigrationStatusResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/UpdateMigrationStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *migratorServiceClient) SendViaSCP(ctx context.Context, in *SendViaSCPRequest, opts ...grpc.CallOption) (*SendViaSCPResponse, error) {
+	out := new(SendViaSCPResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/SendViaSCP", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigratorServiceServer is the server API for MigratorService service.
 // All implementations must embed UnimplementedMigratorServiceServer
 // for forward compatibility
@@ -62,6 +84,10 @@ type MigratorServiceServer interface {
 	CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error)
 	// Migratord with client role invokes it's peer. If works it's peer gets in a server role.
 	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
+	// Updates the status of the migration, invoked in server.
+	UpdateMigrationStatus(context.Context, *UpdateMigrationStatusRequest) (*UpdateMigrationStatusResponse, error)
+	// Stream the checkpoint file
+	SendViaSCP(context.Context, *SendViaSCPRequest) (*SendViaSCPResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
 }
 
@@ -74,6 +100,12 @@ func (UnimplementedMigratorServiceServer) CreateMigrationJob(context.Context, *C
 }
 func (UnimplementedMigratorServiceServer) ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareMigrationJob not implemented")
+}
+func (UnimplementedMigratorServiceServer) UpdateMigrationStatus(context.Context, *UpdateMigrationStatusRequest) (*UpdateMigrationStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMigrationStatus not implemented")
+}
+func (UnimplementedMigratorServiceServer) SendViaSCP(context.Context, *SendViaSCPRequest) (*SendViaSCPResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendViaSCP not implemented")
 }
 func (UnimplementedMigratorServiceServer) mustEmbedUnimplementedMigratorServiceServer() {}
 
@@ -124,6 +156,42 @@ func _MigratorService_ShareMigrationJob_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MigratorService_UpdateMigrationStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMigrationStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigratorServiceServer).UpdateMigrationStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MigratorService/UpdateMigrationStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigratorServiceServer).UpdateMigrationStatus(ctx, req.(*UpdateMigrationStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MigratorService_SendViaSCP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendViaSCPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigratorServiceServer).SendViaSCP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MigratorService/SendViaSCP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigratorServiceServer).SendViaSCP(ctx, req.(*SendViaSCPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MigratorService_ServiceDesc is the grpc.ServiceDesc for MigratorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -138,6 +206,14 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ShareMigrationJob",
 			Handler:    _MigratorService_ShareMigrationJob_Handler,
+		},
+		{
+			MethodName: "UpdateMigrationStatus",
+			Handler:    _MigratorService_UpdateMigrationStatus_Handler,
+		},
+		{
+			MethodName: "SendViaSCP",
+			Handler:    _MigratorService_SendViaSCP_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

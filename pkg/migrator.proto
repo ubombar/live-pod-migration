@@ -8,6 +8,12 @@ service MigratorService {
 
     // Migratord with client role invokes it's peer. If works it's peer gets in a server role.
     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
+
+    // Updates the status of the migration, invoked in server.
+    rpc UpdateMigrationStatus (UpdateMigrationStatusRequest) returns (UpdateMigrationStatusResponse);
+
+    // Stream the checkpoint file
+    rpc SendViaSCP (SendViaSCPRequest) returns (SendViaSCPResponse);
 }
 
 message CreateMigrationJobRequest {
@@ -32,4 +38,21 @@ message ShareMigrationJobResponse {
     string migration_id = 1;
     bool accepted = 2;
     int64 creaton_unix_time = 3;
+}
+
+message UpdateMigrationStatusRequest {
+    string migration_id = 1;    
+    string new_status = 2;
+    optional string description = 3;
+}
+
+message UpdateMigrationStatusResponse {}
+
+message SendViaSCPRequest {
+    string sftp_certificate = 1;
+    int64 file_size = 2;
+}
+
+message SendViaSCPResponse {
+    
 }
