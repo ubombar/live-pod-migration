@@ -32,8 +32,8 @@ const (
 type MigrationRole string
 
 const (
-	RoleClient MigrationRole = "Role Client"
-	RoleServer MigrationRole = "Role Server"
+	RoleClient MigrationRole = "Client"
+	RoleServer MigrationRole = "Server"
 )
 
 type MigrationInfo interface {
@@ -141,15 +141,9 @@ func (q *MigrationMap) Get(migrationId string) (*MigrationJob, bool) {
 	return migration, ok
 }
 
-func (q *MigrationMap) Save(m *MigrationJob) bool {
+func (q *MigrationMap) Save(m *MigrationJob) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
-	if _, ok := q.mmap[m.MigrationId]; ok {
-		return false
-	}
-
 	q.mmap[m.MigrationId] = m
-
-	return true
 }

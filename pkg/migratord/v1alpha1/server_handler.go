@@ -187,10 +187,15 @@ func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *
 	}
 
 	// Maybe add a checker for this before changing the status
-	migrationJob.Status = MigrationStatus(req.NewStatus)
-	migrationJob.Running = req.NewRunning
+	newMigrationJob := *migrationJob
+	newMigrationJob.Status = MigrationStatus(req.NewStatus)
+	newMigrationJob.Running = req.NewRunning
 
-	m.parent.MigrationMap.Save(migrationJob)
+	m.parent.MigrationMap.Save(&newMigrationJob)
+
+	if req.NewStatus == string(Done) {
+		logrus.Infoln("Migration", req.MigrationId, "complete!")
+	}
 
 	return &pb.UpdateMigrationStatusResponse{}, nil
 }

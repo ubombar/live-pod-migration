@@ -35,23 +35,21 @@ func updateAndSyncJobStatus(client pb.MigratorServiceClient, mmap *MigrationMap,
 	// Change the status in server
 	_, err := client.UpdateMigrationStatus(context.Background(), &pb.UpdateMigrationStatusRequest{
 		MigrationId: job.MigrationId,
-		NewStatus:   string(Checkpointing),
-		NewRunning:  false,
+		NewStatus:   string(newStatus),
+		NewRunning:  running,
 	})
 
-	// logrus.Println("Updating the status", job)
-
 	if err != nil {
-		logrus.Warn("Dailed to update peer status")
 		return job, err
 	}
 
 	// Change the status in client
-	job.Status = newStatus
-	job.Running = running
-	mmap.Save(job)
+	newJobs := *job
+	newJobs.Status = newStatus
+	newJobs.Running = running
+	mmap.Save(&newJobs)
 
-	return job, nil
+	return &newJobs, nil
 }
 
 // Handles unknown or not implemented migration job
@@ -69,19 +67,31 @@ func handleBasicMigrationJob(m *Migratord, job *MigrationJob) {
 		return
 	}
 
-	_ = pb.NewMigratorServiceClient(conn)
+	client := pb.NewMigratorServiceClient(conn)
 
-	fmt.Printf("%v\n", job)
+	// Change the status to Checkpointing
+	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Checkpointing, false)
+	if err != nil {
+		logrus.Error(err)
+	}
 
-	// // Change the status to Checkpointing
-	// job, _ = updateAndSyncJobStatus(client, m.MigrationMap, job, Checkpointing, false)
+	// Change the status to Transfering
+	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Transfering, false)
+	if err != nil {
+		logrus.Error(err)
+	}
 
-	// // Change the status to Transfering
-	// job, _ = updateAndSyncJobStatus(client, m.MigrationMap, job, Transfering, false)
+	// Change the status to Restoring
+	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Restoring, false)
+	if err != nil {
+		logrus.Error(err)
+	}
 
-	// // Change the status to Restoring
-	// job, _ = updateAndSyncJobStatus(client, m.MigrationMap, job, Restoring, false)
+	// Change the status to Done
+	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Done, false)
+	if err != nil {
+		logrus.Error(err)
+	}
 
-	// // Change the status to Done
-	// job, _ = updateAndSyncJobStatus(client, m.MigrationMap, job, Done, true)
+	logrus.Infoln("Migration", job.MigrationId, "complete!")
 }
