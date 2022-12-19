@@ -3,12 +3,16 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+var serverPrivateKeyPath string
+var serverUser string
 
 var jobCmd = &cobra.Command{
 	Use:   "job [OPTIONS] [container_id]",
@@ -29,13 +33,23 @@ var jobCmd = &cobra.Command{
 			return
 		}
 
+		privateKey, err := ioutil.ReadFile(serverPrivateKeyPath)
+
+		if err != nil {
+			fmt.Printf("Cannot load server's private key")
+			return
+		}
+
 		client := pb.NewMigratorServiceClient(conn)
 		defer conn.Close()
 
 		resp, err := client.CreateMigrationJob(context.Background(), &pb.CreateMigrationJobRequest{
-			PeerAddress: rootConfig.addressServer,
-			PeerPort:    int32(rootConfig.portServer),
-			ContainerId: containerId,
+			PeerAddress:    rootConfig.addressServer,
+			PeerPort:       int32(rootConfig.portServer),
+			ContainerId:    containerId,
+			PrivateKey:     string(privateKey),
+			Method:         pb.MigrationMethod_Basic,
+			ServerUsername: serverUser,
 		})
 
 		if err != nil {
@@ -53,5 +67,7 @@ var jobCmd = &cobra.Command{
 }
 
 func init() {
+	jobCmd.Flags().StringVar(&serverPrivateKeyPath, "key", "~/.ssh/id_rsa", "id_rsa file of the server migratord.")
+	jobCmd.Flags().StringVar(&serverUser, "user", "docker", "server's user for ssh connection.")
 	rootCmd.AddCommand(jobCmd)
 }

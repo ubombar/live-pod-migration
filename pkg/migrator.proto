@@ -14,9 +14,6 @@ service MigratorService {
 
     // Gets the status of the migration, invoked in server.
     rpc GetMigrationStatus (GetMigrationStatusRequest) returns (GetMigrationStatusResponse);
-
-    // Stream the checkpoint file
-    rpc SendViaSCP (SendViaSCPRequest) returns (SendViaSCPResponse);
 }
 
 enum MigrationMethod {
@@ -30,6 +27,8 @@ message CreateMigrationJobRequest {
     int32 peer_port = 2;
     string container_id = 3;
     MigrationMethod method = 4;
+    string private_key = 5;
+    string server_username = 6;
 }
 
 message CreateMigrationJobResponse {
@@ -45,6 +44,7 @@ message ShareMigrationJobRequest {
     string container_image = 4;
     string container_name = 5;
     MigrationMethod method = 6;
+    string private_key = 7;
 }
 
 message ShareMigrationJobResponse {
@@ -78,13 +78,4 @@ message GetMigrationStatusResponse {
     int64 migration_time = 7;
     string migration_role = 8;
     string migration_method = 9;
-}
-
-message SendViaSCPRequest {
-    string sftp_certificate = 1;
-    int64 file_size = 2;
-}
-
-message SendViaSCPResponse {
-    
 }
