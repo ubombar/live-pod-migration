@@ -89,7 +89,7 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 	// Add the migration to the queue
 	m.parent.MigrationQueue.Push(migObject)
 
-	logrus.Printf("New migration accepted as client. Migration id %s\n", resp.MigrationId)
+	logrus.Infoln("Migration", resp.MigrationId, "accepted as client.")
 
 	response := &pb.CreateMigrationJobResponse{
 		Accepted:        true,
@@ -164,7 +164,7 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 	// Add the migration to the migration map
 	m.parent.MigrationMap.Save(migObject)
 
-	logrus.Printf("New migration accepted as server. Migration id %s\n", migrationId)
+	logrus.Infoln("Migration", migrationId, "accepted as server.")
 
 	return &pb.ShareMigrationJobResponse{
 		Accepted:        true,
@@ -195,6 +195,8 @@ func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *
 
 	if req.NewStatus == string(Done) {
 		logrus.Infoln("Migration", req.MigrationId, "complete!")
+	} else if req.NewStatus == string(Error) {
+		logrus.Infoln("Migration", req.MigrationId, "failed with error: ", req.Description)
 	}
 
 	return &pb.UpdateMigrationStatusResponse{}, nil
