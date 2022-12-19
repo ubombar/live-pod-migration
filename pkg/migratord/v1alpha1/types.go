@@ -10,31 +10,35 @@ const (
 	DefaultMigrationQueueCapacity = 16
 )
 
-const (
-	Preparing     = "Preparing"
-	Checkpointing = "Checkpointing"
-	Transfering   = "Transfering"
-	Restoring     = "Restoring"
-	Done          = "Done"
-	Error         = "Error"
-)
-
 type MigrationStatus string
 
 const (
-	Basic    = "Basic"
-	Precopy  = "Precopy"
-	Postcopy = "Postcopy"
+	Preparing     MigrationStatus = "Preparing"
+	Checkpointing MigrationStatus = "Checkpointing"
+	Transfering   MigrationStatus = "Transfering"
+	Restoring     MigrationStatus = "Restoring"
+	Done          MigrationStatus = "Done"
+	Error         MigrationStatus = "Error"
 )
 
 type MigrationMethod string
 
 const (
-	RoleClient = "Role Client"
-	RoleServer = "Role Server"
+	Basic    MigrationMethod = "Basic"
+	Precopy  MigrationMethod = "Precopy"
+	Postcopy MigrationMethod = "Postcopy"
 )
 
 type MigrationRole string
+
+const (
+	RoleClient MigrationRole = "Role Client"
+	RoleServer MigrationRole = "Role Server"
+)
+
+type MigrationInfo interface {
+	Type() MigrationMethod
+}
 
 type MigrationJob struct {
 	// Used for describing the migration
@@ -61,6 +65,9 @@ type MigrationJob struct {
 
 	// How the migration will be performed
 	Method MigrationMethod
+
+	// Contains additional information about the migration
+	MigrationInfo MigrationInfo
 }
 
 type MigrationQueue struct {

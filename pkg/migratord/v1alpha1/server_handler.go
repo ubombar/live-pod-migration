@@ -155,3 +155,13 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		CreatonUnixTime: creationDate.Unix(),
 	}, nil
 }
+
+// Updates the status of the migration, invoked in server.
+func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *pb.UpdateMigrationStatusRequest) (*pb.UpdateMigrationStatusResponse, error) {
+	return nil, nil
+}
+
+// Stream the checkpoint file
+func (m *serverMigationHandler) SendViaSCP(ctx context.Context, req *pb.SendViaSCPRequest) (*pb.SendViaSCPResponse, error) {
+	return nil, nil
+}
