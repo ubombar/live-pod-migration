@@ -84,6 +84,8 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 		Method:       migrationMethod,
 		ServerPort:   int(req.PeerPort),
 		ClientPort:   m.parent.Port,
+		PrivateKey:   req.PrivateKey,
+		Username:     req.ServerUsername,
 	}
 
 	// Add the migration to the queue
@@ -159,6 +161,8 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		Method:       migrationMethod,
 		ClientPort:   int(req.PeerPort),
 		ServerPort:   m.parent.Port,
+		PrivateKey:   req.PrivateKey,
+		Username:     "", // No need to have this information?
 	}
 
 	// Add the migration to the migration map
@@ -227,13 +231,4 @@ func (m *serverMigationHandler) GetMigrationStatus(ctx context.Context, req *pb.
 	}
 
 	return resp, nil
-}
-
-// Stream the checkpoint file
-func (m *serverMigationHandler) SendViaSCP(ctx context.Context, req *pb.SendViaSCPRequest) (*pb.SendViaSCPResponse, error) {
-	if req == nil {
-		return nil, errors.New("incoming request is nil")
-	}
-
-	return nil, nil
 }

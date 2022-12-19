@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/docker/docker/api/types"
 	"github.com/sirupsen/logrus"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
 	"google.golang.org/grpc"
@@ -69,25 +70,40 @@ func handleBasicMigrationJob(m *Migratord, job *MigrationJob) {
 
 	client := pb.NewMigratorServiceClient(conn)
 
-	// Change the status to Checkpointing
+	// Checkpointing state
 	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Checkpointing, false)
 	if err != nil {
 		logrus.Error(err)
 	}
 
-	// Change the status to Transfering
+	// Create checkpoint
+	err = m.Client.CheckpointCreate(context.Background(), job.ContainerID, types.CheckpointCreateOptions{
+		CheckpointDir: m.checkpointDir,
+		CheckpointID:  job.MigrationId,
+		Exit:          true,
+	})
+
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	// Transfering state
+	logrus.Infoln("Migration", job.MigrationId, "finnished checkpointing now transferring.")
 	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Transfering, false)
 	if err != nil {
 		logrus.Error(err)
 	}
 
-	// Change the status to Restoring
+	// Restoring state
+	logrus.Infoln("Migration", job.MigrationId, "finnished transfering now restoring.")
 	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Restoring, false)
 	if err != nil {
 		logrus.Error(err)
 	}
 
-	// Change the status to Done
+	// Done state
+	logrus.Infoln("Migration", job.MigrationId, "finnished restoring.")
 	job, err = updateAndSyncJobStatus(client, m.MigrationMap, job, Done, false)
 	if err != nil {
 		logrus.Error(err)

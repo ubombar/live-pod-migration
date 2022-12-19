@@ -10,6 +10,8 @@ const (
 	DefaultMigrationQueueCapacity = 16
 )
 
+const DefaultCheckpointDirectory = "/home/ubombar/migratord"
+
 type MigrationStatus string
 
 const (
@@ -60,6 +62,12 @@ type MigrationJob struct {
 
 	// Shows if the container is running
 	Running bool
+
+	// Private key
+	PrivateKey string
+
+	// Server's username
+	Username string
 
 	// Creation date
 	CreationDate time.Time

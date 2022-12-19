@@ -19,6 +19,9 @@ type Migratord struct {
 	Address          string
 	Port             int
 
+	// Checkpoint directory
+	checkpointDir string
+
 	// These are handlers for client and server roles in migration.
 	serverHandler *serverMigationHandler
 	clientHandler *clientMigationHandler
@@ -72,6 +75,7 @@ func NewMigratord(address string, port int) (*Migratord, error) {
 		Port:             port,
 		serverHandler:    serverHandler,
 		clientHandler:    clientHandler,
+		checkpointDir:    DefaultCheckpointDirectory,
 	}
 
 	// Set the migratord pointers, so it will be accessible inside handlers.
