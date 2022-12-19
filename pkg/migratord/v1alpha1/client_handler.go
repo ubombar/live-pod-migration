@@ -1,7 +1,5 @@
 package v1alpha1
 
-import "github.com/ubombar/live-pod-migration/pkg/migratord/v1alpha1/handlers"
-
 type clientMigationHandler struct {
 	parent *Migratord
 }
@@ -10,6 +8,25 @@ type clientMigationHandler struct {
 func (h *clientMigationHandler) PerformMigration(migration *MigrationJob) {
 	switch migration.Method {
 	case Basic:
-		handlers.ClientMigrationHandlerBasic{}.Handle()
+		handleBasicMigrationJob(h.parent, migration)
+	case Postcopy:
+		// Not implemented yet
+		handleUnknownMigrationJob(h.parent, migration)
+	case Precopy:
+		// Not implemented yet
+		handleUnknownMigrationJob(h.parent, migration)
+	default:
+		// Error
+		handleUnknownMigrationJob(h.parent, migration)
 	}
+}
+
+// Handles unknown or not implemented migration job
+func handleUnknownMigrationJob(m *Migratord, job *MigrationJob) {
+
+}
+
+// Do the basic migration job. This consists of Checkpointing, Transfering and Restoring.
+func handleBasicMigrationJob(m *Migratord, job *MigrationJob) {
+
 }
