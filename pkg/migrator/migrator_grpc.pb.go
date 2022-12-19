@@ -28,6 +28,8 @@ type MigratorServiceClient interface {
 	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
 	// Updates the status of the migration, invoked in server.
 	UpdateMigrationStatus(ctx context.Context, in *UpdateMigrationStatusRequest, opts ...grpc.CallOption) (*UpdateMigrationStatusResponse, error)
+	// Gets the status of the migration, invoked in server.
+	GetMigrationStatus(ctx context.Context, in *GetMigrationStatusRequest, opts ...grpc.CallOption) (*GetMigrationStatusResponse, error)
 	// Stream the checkpoint file
 	SendViaSCP(ctx context.Context, in *SendViaSCPRequest, opts ...grpc.CallOption) (*SendViaSCPResponse, error)
 }
@@ -67,6 +69,15 @@ func (c *migratorServiceClient) UpdateMigrationStatus(ctx context.Context, in *U
 	return out, nil
 }
 
+func (c *migratorServiceClient) GetMigrationStatus(ctx context.Context, in *GetMigrationStatusRequest, opts ...grpc.CallOption) (*GetMigrationStatusResponse, error) {
+	out := new(GetMigrationStatusResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/GetMigrationStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *migratorServiceClient) SendViaSCP(ctx context.Context, in *SendViaSCPRequest, opts ...grpc.CallOption) (*SendViaSCPResponse, error) {
 	out := new(SendViaSCPResponse)
 	err := c.cc.Invoke(ctx, "/MigratorService/SendViaSCP", in, out, opts...)
@@ -86,6 +97,8 @@ type MigratorServiceServer interface {
 	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
 	// Updates the status of the migration, invoked in server.
 	UpdateMigrationStatus(context.Context, *UpdateMigrationStatusRequest) (*UpdateMigrationStatusResponse, error)
+	// Gets the status of the migration, invoked in server.
+	GetMigrationStatus(context.Context, *GetMigrationStatusRequest) (*GetMigrationStatusResponse, error)
 	// Stream the checkpoint file
 	SendViaSCP(context.Context, *SendViaSCPRequest) (*SendViaSCPResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
@@ -103,6 +116,9 @@ func (UnimplementedMigratorServiceServer) ShareMigrationJob(context.Context, *Sh
 }
 func (UnimplementedMigratorServiceServer) UpdateMigrationStatus(context.Context, *UpdateMigrationStatusRequest) (*UpdateMigrationStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateMigrationStatus not implemented")
+}
+func (UnimplementedMigratorServiceServer) GetMigrationStatus(context.Context, *GetMigrationStatusRequest) (*GetMigrationStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMigrationStatus not implemented")
 }
 func (UnimplementedMigratorServiceServer) SendViaSCP(context.Context, *SendViaSCPRequest) (*SendViaSCPResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendViaSCP not implemented")
@@ -174,6 +190,24 @@ func _MigratorService_UpdateMigrationStatus_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MigratorService_GetMigrationStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMigrationStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigratorServiceServer).GetMigrationStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MigratorService/GetMigrationStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigratorServiceServer).GetMigrationStatus(ctx, req.(*GetMigrationStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MigratorService_SendViaSCP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendViaSCPRequest)
 	if err := dec(in); err != nil {
@@ -210,6 +244,10 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateMigrationStatus",
 			Handler:    _MigratorService_UpdateMigrationStatus_Handler,
+		},
+		{
+			MethodName: "GetMigrationStatus",
+			Handler:    _MigratorService_GetMigrationStatus_Handler,
 		},
 		{
 			MethodName: "SendViaSCP",

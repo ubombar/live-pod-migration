@@ -12,6 +12,9 @@ service MigratorService {
     // Updates the status of the migration, invoked in server.
     rpc UpdateMigrationStatus (UpdateMigrationStatusRequest) returns (UpdateMigrationStatusResponse);
 
+    // Gets the status of the migration, invoked in server.
+    rpc GetMigrationStatus (GetMigrationStatusRequest) returns (GetMigrationStatusResponse);
+
     // Stream the checkpoint file
     rpc SendViaSCP (SendViaSCPRequest) returns (SendViaSCPResponse);
 }
@@ -53,10 +56,29 @@ message ShareMigrationJobResponse {
 message UpdateMigrationStatusRequest {
     string migration_id = 1;    
     string new_status = 2;
+    bool new_running = 4;
     optional string description = 3;
 }
 
-message UpdateMigrationStatusResponse {}
+message UpdateMigrationStatusResponse {
+
+}
+
+message GetMigrationStatusRequest {
+    string migration_id = 1;
+}
+
+message GetMigrationStatusResponse {
+    string migration_id = 1;
+    string server_ip = 2;
+    string client_ip = 3;
+    string container_id = 4;
+    string migration_status = 5;
+    bool running = 6;
+    int64 migration_time = 7;
+    string migration_role = 8;
+    string migration_method = 9;
+}
 
 message SendViaSCPRequest {
     string sftp_certificate = 1;

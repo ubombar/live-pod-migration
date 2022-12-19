@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -50,7 +51,7 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 	resp, err := client.ShareMigrationJob(ctx, &pb.ShareMigrationJobRequest{
 		PeerAddress:    m.parent.Address,
 		PeerPort:       int32(m.parent.Port),
-		ContainerId:    containerJSON.Image,
+		ContainerId:    containerJSON.ID,
 		ContainerImage: containerJSON.Image,
 		ContainerName:  containerJSON.Name,
 	})
@@ -75,7 +76,7 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 		ClientIP:     req.PeerAddress,
 		ServerIP:     m.parent.Address,
 		MigrationId:  resp.MigrationId,
-		ContainerID:  req.ContainerId,
+		ContainerID:  containerJSON.ID,
 		Status:       Preparing,
 		Running:      true,
 		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
@@ -122,9 +123,15 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		fmt.Println("Warning, the server migrator doesn't have the specified image!")
 	}
 
+	containerInspect, err := m.parent.Client.ContainerInspect(ctx, req.ContainerId)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the migrationid from migration string.
 	creationDate := time.Now()
-	migrationId := uuid.New().String()
+	migrationId := strings.ReplaceAll(uuid.New().String(), "-", "")
 
 	var migrationMethod MigrationMethod
 
@@ -142,7 +149,7 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		ClientIP:     req.PeerAddress,
 		ServerIP:     m.parent.Address,
 		MigrationId:  migrationId,
-		ContainerID:  req.ContainerId,
+		ContainerID:  containerInspect.ID,
 		Status:       Preparing,
 		Running:      true,
 		CreationDate: creationDate,
@@ -176,12 +183,43 @@ func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *
 
 	// Maybe add a checker for this before changing the status
 	migrationJob.Status = MigrationStatus(req.NewStatus)
+	migrationJob.Running = req.NewRunning
 
 	return &pb.UpdateMigrationStatusResponse{}, nil
 }
 
+// Gets the status of the migration, invoked in server.
+func (m *serverMigationHandler) GetMigrationStatus(ctx context.Context, req *pb.GetMigrationStatusRequest) (*pb.GetMigrationStatusResponse, error) {
+	if req == nil {
+		return nil, errors.New("incoming request is nil")
+	}
+
+	job, ok := m.parent.MigrationMap.Get(req.MigrationId)
+
+	if !ok {
+		return nil, errors.New("cannot find migration with given id")
+	}
+
+	resp := &pb.GetMigrationStatusResponse{
+		MigrationId:     job.MigrationId,
+		ServerIp:        job.ServerIP,
+		ClientIp:        job.ClientIP,
+		ContainerId:     job.ContainerID,
+		MigrationStatus: string(job.Status),
+		Running:         job.Running,
+		MigrationTime:   job.CreationDate.Unix(),
+		MigrationRole:   string(job.Role),
+		MigrationMethod: string(job.Method),
+	}
+
+	return resp, nil
+}
+
 // Stream the checkpoint file
 func (m *serverMigationHandler) SendViaSCP(ctx context.Context, req *pb.SendViaSCPRequest) (*pb.SendViaSCPResponse, error) {
+	if req == nil {
+		return nil, errors.New("incoming request is nil")
+	}
 
 	return nil, nil
 }

@@ -18,7 +18,11 @@ func main() {
 
 	logrus.Printf("Starting migratord on address %s and port %d\n", address, port)
 
-	mig, _ := v1alpha1.NewMigratord(address, port)
+	mig, err := v1alpha1.NewMigratord(address, port)
+
+	if err != nil {
+		panic(err)
+	}
 
 	mig.Run()
 }

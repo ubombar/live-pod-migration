@@ -26,7 +26,7 @@ type Migratord struct {
 	// Incoming queue, for managing migrations actively. Only used by client role migrator.
 	MigrationQueue *MigrationQueue
 
-	// This is for passively managed migration. If the migrator is in server role.
+	// This is for passively and actively managed migration.
 	MigrationMap *MigrationMap
 }
 
@@ -89,6 +89,7 @@ func (m *Migratord) Run() {
 		// Always consume from the queue
 		for {
 			migration := m.MigrationQueue.Pop()
+			m.MigrationMap.Save(migration)
 			go m.clientHandler.PerformMigration(migration)
 		}
 	}()

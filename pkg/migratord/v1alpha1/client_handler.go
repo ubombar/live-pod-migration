@@ -1,5 +1,9 @@
 package v1alpha1
 
+import (
+	"github.com/sirupsen/logrus"
+)
+
 type clientMigationHandler struct {
 	parent *Migratord
 }
@@ -23,7 +27,7 @@ func (h *clientMigationHandler) PerformMigration(migration *MigrationJob) {
 
 // Handles unknown or not implemented migration job
 func handleUnknownMigrationJob(m *Migratord, job *MigrationJob) {
-
+	logrus.Warn("Migration job method is not implemented.")
 }
 
 // Do the basic migration job. This consists of Checkpointing, Transfering and Restoring.

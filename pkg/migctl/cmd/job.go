@@ -45,7 +45,7 @@ var jobCmd = &cobra.Command{
 		}
 
 		if resp.Accepted {
-			fmt.Printf("%s", resp.MigrationId)
+			fmt.Printf("%s\n", resp.MigrationId)
 		} else {
 			fmt.Println("Cannot create migration job")
 		}
