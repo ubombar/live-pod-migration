@@ -21,8 +21,6 @@ var jobCmd = &cobra.Command{
 		}
 		containerId := args[0]
 
-		fmt.Printf("args: %v\n", args)
-
 		clientMigrator := fmt.Sprintf("%s:%d", rootConfig.addressClient, rootConfig.portClient)
 		conn, err := grpc.Dial(clientMigrator, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
