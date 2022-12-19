@@ -48,6 +48,10 @@ type MigrationJob struct {
 	ClientIP string
 	ServerIP string
 
+	// Client and Servers port
+	ClientPort int
+	ServerPort int
+
 	// Cotnainer identification number
 	ContainerID string
 

@@ -82,6 +82,8 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
 		Role:         RoleClient,
 		Method:       migrationMethod,
+		ServerPort:   int(req.PeerPort),
+		ClientPort:   m.parent.Port,
 	}
 
 	// Add the migration to the queue
@@ -155,6 +157,8 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 		CreationDate: creationDate,
 		Role:         RoleServer,
 		Method:       migrationMethod,
+		ClientPort:   int(req.PeerPort),
+		ServerPort:   m.parent.Port,
 	}
 
 	// Add the migration to the migration map
@@ -178,12 +182,15 @@ func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *
 	migrationJob, ok := m.parent.MigrationMap.Get(req.MigrationId)
 
 	if !ok {
+		logrus.Errorln("cannot find given migration")
 		return nil, errors.New("cannot find migration with given id")
 	}
 
 	// Maybe add a checker for this before changing the status
 	migrationJob.Status = MigrationStatus(req.NewStatus)
 	migrationJob.Running = req.NewRunning
+
+	m.parent.MigrationMap.Save(migrationJob)
 
 	return &pb.UpdateMigrationStatusResponse{}, nil
 }
