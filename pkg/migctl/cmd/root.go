@@ -7,15 +7,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type MigCTLConfig struct {
+	addressClient string
+	addressServer string
+
+	portClient int
+	portServer int
+}
+
+var rootConfig = MigCTLConfig{}
+
 var rootCmd = &cobra.Command{
-	Use:   "hugo",
-	Short: "Hugo is a very fast static site generator",
-	Long: `A Fast and Flexible Static Site Generator built with
-				  love by spf13 and friends in Go.
-				  Complete documentation is available at http://hugo.spf13.com`,
+	Short: "migctl is a command line utility for triggering live migrations.",
+	Long: `migctl is a command line utility for triggering live migrations.
+The nodes should contain a utility named 'migratord'.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
+		fmt.Println("Use migctl --help to get help.")
 	},
+	Hidden: true,
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVar(&rootConfig.addressClient, "address-client", "localhost", "Client's IP address")
+	rootCmd.PersistentFlags().StringVar(&rootConfig.addressServer, "address-server", "localhost", "Server's IP address")
+	rootCmd.PersistentFlags().IntVar(&rootConfig.portClient, "port-client", 4545, "Client's port")
+	rootCmd.PersistentFlags().IntVar(&rootConfig.portServer, "port-server", 4546, "Server's port")
 }
 
 func Execute() {

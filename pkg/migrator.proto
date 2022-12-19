@@ -30,7 +30,9 @@ message CreateMigrationJobRequest {
 }
 
 message CreateMigrationJobResponse {
-    bool accepted = 1;
+    string migration_id = 1;
+    bool accepted = 2;
+    int64 creaton_unix_time = 3;
 }
 
 message ShareMigrationJobRequest {

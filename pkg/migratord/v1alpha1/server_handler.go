@@ -88,7 +88,13 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 
 	logrus.Printf("New migration accepted as client. Migration id %s\n", resp.MigrationId)
 
-	return &pb.CreateMigrationJobResponse{Accepted: true}, nil
+	response := &pb.CreateMigrationJobResponse{
+		Accepted:        true,
+		MigrationId:     resp.MigrationId,
+		CreatonUnixTime: migObject.CreationDate.Unix(),
+	}
+
+	return response, nil
 }
 
 // Migratord with client role invokes it's peer. If works it's peer gets in a server role.
