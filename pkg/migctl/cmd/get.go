@@ -68,7 +68,8 @@ var getCmd = &cobra.Command{
 
 		w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 		fmt.Fprintf(w, "%v\t%v\t%v\n", "Role", respServer.MigrationRole, respClient.MigrationRole)
-		fmt.Fprintf(w, "%v\t%v\t%v\n", "ContainerId", respServer.ContainerId, respClient.ContainerId)
+		fmt.Fprintf(w, "%v\t%v\t%v\n", "Client ContainerId", respServer.ClientContainerId, respClient.ClientContainerId)
+		fmt.Fprintf(w, "%v\t%v\t%v\n", "Server ContainerId", respServer.ServerContainerId, respClient.ServerContainerId)
 		fmt.Fprintf(w, "%v\t%v\t%v\n", "Method", respServer.MigrationMethod, respClient.MigrationMethod)
 		fmt.Fprintf(w, "%v\t%v\t%v\n", "Running", respServer.Running, respClient.Running)
 		fmt.Fprintf(w, "%v\t%v\t%v\n", "Status", respServer.MigrationStatus, respClient.MigrationStatus)

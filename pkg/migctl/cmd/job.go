@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/spf13/cobra"
 	pb "github.com/ubombar/live-pod-migration/pkg/migrator"
@@ -33,7 +33,7 @@ var jobCmd = &cobra.Command{
 			return
 		}
 
-		privateKey, err := ioutil.ReadFile(serverPrivateKeyPath)
+		privateKey, err := os.ReadFile(serverPrivateKeyPath)
 
 		if err != nil {
 			fmt.Printf("Cannot load server's private key")

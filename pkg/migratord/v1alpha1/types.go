@@ -55,7 +55,8 @@ type MigrationJob struct {
 	ServerPort int
 
 	// Cotnainer identification number
-	ContainerID string
+	ClientContainerID string
+	ServerContainerID string
 
 	// Migration status describes in which stage migration is
 	Status MigrationStatus

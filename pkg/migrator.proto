@@ -51,6 +51,7 @@ message ShareMigrationJobResponse {
     string migration_id = 1;
     bool accepted = 2;
     int64 creaton_unix_time = 3;
+    string server_container_id = 4;
 }
 
 message UpdateMigrationStatusRequest {
@@ -72,10 +73,11 @@ message GetMigrationStatusResponse {
     string migration_id = 1;
     string server_ip = 2;
     string client_ip = 3;
-    string container_id = 4;
+    string server_container_id = 4;
     string migration_status = 5;
     bool running = 6;
     int64 migration_time = 7;
     string migration_role = 8;
     string migration_method = 9;
+    string client_container_id = 10;
 }

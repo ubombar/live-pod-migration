@@ -77,7 +77,7 @@ func handleBasicMigrationJob(m *Migratord, job *MigrationJob) {
 	}
 
 	// Create checkpoint
-	err = m.Client.CheckpointCreate(context.Background(), job.ContainerID, types.CheckpointCreateOptions{
+	err = m.Client.CheckpointCreate(context.Background(), job.ClientContainerID, types.CheckpointCreateOptions{
 		CheckpointDir: m.checkpointDir,
 		CheckpointID:  job.MigrationId,
 		Exit:          true,

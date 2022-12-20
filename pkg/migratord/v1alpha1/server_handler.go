@@ -73,19 +73,20 @@ func (m *serverMigationHandler) CreateMigrationJob(ctx context.Context, req *pb.
 
 	// Create the migration object
 	migObject := &MigrationJob{
-		ClientIP:     req.PeerAddress,
-		ServerIP:     m.parent.Address,
-		MigrationId:  resp.MigrationId,
-		ContainerID:  containerJSON.ID,
-		Status:       Preparing,
-		Running:      true,
-		CreationDate: time.Unix(resp.CreatonUnixTime, 0),
-		Role:         RoleClient,
-		Method:       migrationMethod,
-		ServerPort:   int(req.PeerPort),
-		ClientPort:   m.parent.Port,
-		PrivateKey:   req.PrivateKey,
-		Username:     req.ServerUsername,
+		ClientIP:          req.PeerAddress,
+		ServerIP:          m.parent.Address,
+		MigrationId:       resp.MigrationId,
+		ServerContainerID: resp.ServerContainerId,
+		ClientContainerID: containerJSON.ID,
+		Status:            Preparing,
+		Running:           true,
+		CreationDate:      time.Unix(resp.CreatonUnixTime, 0),
+		Role:              RoleClient,
+		Method:            migrationMethod,
+		ServerPort:        int(req.PeerPort),
+		ClientPort:        m.parent.Port,
+		PrivateKey:        req.PrivateKey,
+		Username:          req.ServerUsername,
 	}
 
 	// Add the migration to the queue
@@ -124,14 +125,11 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 	}
 
 	if !containsImage {
-		fmt.Println("Warning, the server migrator doesn't have the specified image!")
+		logrus.Warnln("Warning, the server migrator doesn't have the specified image!")
 	}
 
-	containerInspect, err := m.parent.Client.ContainerInspect(ctx, req.ContainerId)
-
-	if err != nil {
-		return nil, err
-	}
+	// Create but do not start the container here
+	// newContainer, err := m.parent.Client.ContainerCreate()
 
 	// Create the migrationid from migration string.
 	creationDate := time.Now()
@@ -150,19 +148,21 @@ func (m *serverMigationHandler) ShareMigrationJob(ctx context.Context, req *pb.S
 
 	// Create the migration object
 	migObject := &MigrationJob{
-		ClientIP:     req.PeerAddress,
-		ServerIP:     m.parent.Address,
-		MigrationId:  migrationId,
-		ContainerID:  containerInspect.ID,
-		Status:       Preparing,
-		Running:      true,
-		CreationDate: creationDate,
-		Role:         RoleServer,
-		Method:       migrationMethod,
-		ClientPort:   int(req.PeerPort),
-		ServerPort:   m.parent.Port,
-		PrivateKey:   req.PrivateKey,
-		Username:     "", // No need to have this information?
+		ClientIP:    req.PeerAddress,
+		ServerIP:    m.parent.Address,
+		MigrationId: migrationId,
+		// ServerContainerID: strings.Split(newContainer.ID, ":")[1],
+		ServerContainerID: "", // It is unknown
+		ClientContainerID: req.ContainerId,
+		Status:            Preparing,
+		Running:           true,
+		CreationDate:      creationDate,
+		Role:              RoleServer,
+		Method:            migrationMethod,
+		ServerPort:        m.parent.Port,
+		ClientPort:        int(req.PeerPort),
+		PrivateKey:        req.PrivateKey,
+		Username:          "", // No need to have this information?
 	}
 
 	// Add the migration to the migration map
@@ -222,15 +222,16 @@ func (m *serverMigationHandler) GetMigrationStatus(ctx context.Context, req *pb.
 	}
 
 	resp := &pb.GetMigrationStatusResponse{
-		MigrationId:     job.MigrationId,
-		ServerIp:        job.ServerIP,
-		ClientIp:        job.ClientIP,
-		ContainerId:     job.ContainerID,
-		MigrationStatus: string(job.Status),
-		Running:         job.Running,
-		MigrationTime:   job.CreationDate.Unix(),
-		MigrationRole:   string(job.Role),
-		MigrationMethod: string(job.Method),
+		MigrationId:       job.MigrationId,
+		ServerIp:          job.ServerIP,
+		ClientIp:          job.ClientIP,
+		ServerContainerId: job.ServerContainerID,
+		ClientContainerId: job.ClientContainerID,
+		MigrationStatus:   string(job.Status),
+		Running:           job.Running,
+		MigrationTime:     job.CreationDate.Unix(),
+		MigrationRole:     string(job.Role),
+		MigrationMethod:   string(job.Method),
 	}
 
 	return resp, nil

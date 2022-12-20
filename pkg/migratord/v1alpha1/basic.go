@@ -60,7 +60,7 @@ func TransferCheckpointFile(job *MigrationJob, m *Migratord) error {
 
 func restoreContainer(m *Migratord, job *MigrationJob) {
 	// Check if we have the container beforehand
-	err := m.Client.ContainerStart(context.Background(), job.ContainerID, types.ContainerStartOptions{
+	err := m.Client.ContainerStart(context.Background(), job.ServerContainerID, types.ContainerStartOptions{
 		CheckpointID:  job.MigrationId,
 		CheckpointDir: m.checkpointDir,
 	})
