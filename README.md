@@ -11,10 +11,10 @@ After you create the minikube cluster using the script you can use install scrip
 
 ```bash
     # Use this script to build and install migctl
-    ./bin/install-migctl.sh
+    ./hack/install-migctl.sh
 
     # Use this script to build and install migratword
-    ./bin/install-migratord.sh
+    ./hack/install-migratord.sh
 ```
 
 Then see the containers and images
