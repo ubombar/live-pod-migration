@@ -197,10 +197,13 @@ func (m *serverMigationHandler) UpdateMigrationStatus(ctx context.Context, req *
 
 	m.parent.MigrationMap.Save(&newMigrationJob)
 
-	if req.NewStatus == string(Done) {
+	switch req.NewStatus {
+	case string(Done):
 		logrus.Infoln("Migration", req.MigrationId, "complete!")
-	} else if req.NewStatus == string(Error) {
+	case string(Error):
 		logrus.Infoln("Migration", req.MigrationId, "failed with error: ", req.Description)
+	case string(Restoring):
+		restoreContainer(m.parent, &newMigrationJob)
 	}
 
 	return &pb.UpdateMigrationStatusResponse{}, nil

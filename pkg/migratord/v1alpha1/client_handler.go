@@ -95,12 +95,12 @@ func handleBasicMigrationJob(m *Migratord, job *MigrationJob) {
 		logrus.Error(err)
 	}
 
-	// Transfer using scp
-	err = TransferCheckpointFile(job, m)
+	// // Transfer using scp
+	// err = TransferCheckpointFile(job, m)
 
-	if err != nil {
-		logrus.Error(err)
-	}
+	// if err != nil {
+	// 	logrus.Error(err)
+	// }
 
 	// Restoring state
 	logrus.Infoln("Migration", job.MigrationId, "finnished transfering now restoring.")
