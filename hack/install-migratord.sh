@@ -9,7 +9,7 @@ PROFILE="mentor"
 
 for node in ${NODES[@]}
 do 
-    echo "> Installing migratord on $node"
+    echo -n "> Installing migratord on $node..."
 
     node_ip=$( minikube ip -p $PROFILE -n $node )
     node_port="4545"
@@ -20,9 +20,7 @@ do
 
     scp -i "$( minikube ssh-key -p $PROFILE -n $node )" ./bin/migratord docker@$node_ip:/home/docker/migratord >/dev/null
 
-    echo -n "  > Starting migratord on $node..."
-
-    minikube ssh -p $PROFILE -n $node -- "/home/docker/migratord --address $node_ip --port $node_port" &
+    minikube ssh -p $PROFILE -n $node -- "/home/docker/migratord --address $node_ip --port $node_port &>/dev/null 2>/dev/null" &
 
     echo "done!"
 done
