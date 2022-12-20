@@ -31,7 +31,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootConfig.addressClient, "address-client", "localhost", "Client's IP address")
 	rootCmd.PersistentFlags().StringVar(&rootConfig.addressServer, "address-server", "localhost", "Server's IP address")
 	rootCmd.PersistentFlags().IntVar(&rootConfig.portClient, "port-client", 4545, "Client's port")
-	rootCmd.PersistentFlags().IntVar(&rootConfig.portServer, "port-server", 4546, "Server's port")
+	rootCmd.PersistentFlags().IntVar(&rootConfig.portServer, "port-server", 4545, "Server's port")
 }
 
 func Execute() {
