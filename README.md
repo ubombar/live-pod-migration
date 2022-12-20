@@ -30,7 +30,7 @@ Then see the containers and images
 Now create a container.
 
 ```bash
-    minikube ssh -p mentor -n mentor docker run -it -ePORT=54321 -p 54321:54321 drosenbauer/docker-counter:latest
+    minikube ssh -p mentor -n mentor -- "docker run -itd -ePORT=54321 -p 54321:54321 drosenbauer/docker-counter:latest"
 ```
 
 Now, we create the migration.
