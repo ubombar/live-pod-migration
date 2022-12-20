@@ -20,7 +20,7 @@ do
 
     scp -i "$( minikube ssh-key -p $PROFILE -n $node )" ./bin/migratord docker@$node_ip:/home/docker/migratord >/dev/null
 
-    minikube ssh -p $PROFILE -n $node -- "/home/docker/migratord --address $node_ip --port $node_port &>/dev/null 2>/dev/null" &
+    minikube ssh -p $PROFILE -n $node -- "/home/docker/migratord --address $node_ip --port $node_port" >/dev/null 2>/dev/null &
 
     echo "done!"
 done
