@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 
 NODES=( "mentor" "mentor-m02" )
-NODES=( "mentor" )
 PROFILE="mentor"
 
 ./hack/gen-code.sh
