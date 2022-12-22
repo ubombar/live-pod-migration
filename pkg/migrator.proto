@@ -10,6 +10,11 @@ enum Method {
     Basic = 0;
 }
 
+enum Source {
+    MIGCTL = 0;
+    MIGRATORD = 1;
+}
+
 message CreateMigrationJobRequest {
     string container_id = 1;
     string container_runtime = 2;
@@ -18,6 +23,7 @@ message CreateMigrationJobRequest {
     string peer_key = 5;
     string peer_user = 6;
     Method method = 7;
+    Source source = 8;
 }
 
 message CreateMigrationJobResponse {

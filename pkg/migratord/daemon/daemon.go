@@ -20,6 +20,7 @@ type Daemon interface {
 	GetRoleStore() structures.Store
 	GetContainerClient(name string) clients.Client
 	GetDefaultContainerClient() clients.Client
+	GetRPC() RPC
 }
 
 type daemon struct {
@@ -30,6 +31,7 @@ type daemon struct {
 	syncstore structures.Store
 	rolestore structures.Store
 	client    map[string]clients.Client
+	grpc      RPC
 }
 
 func NewDaemon(config *DaemonConfig) *daemon {
@@ -60,6 +62,12 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		RestoringConsumer:     consumers.NewConsumer(d.GetQueue(RestoringQueue), d.restoringCallback),
 	}
 
+	// Set grpc
+	d.grpc = NewRPC(RPCConfig{
+		Address: config.SelfAddress,
+		Port:    config.SelfPort,
+	}, d)
+
 	// Set client
 	d.client = map[string]clients.Client{
 		clients.ClientDocker: clients.NewDockerClient(),
@@ -71,10 +79,20 @@ func NewDaemon(config *DaemonConfig) *daemon {
 func (d *daemon) Start() error {
 	// Start running all of the consumers
 	for _, consumer := range d.consumers {
-		consumer.Run()
+		if err := consumer.Run(); err != nil {
+			logrus.Errorln("cannot run consumer")
+			return err
+		}
 	}
 
 	// Start gRPC interface
+	err := d.grpc.Run()
+
+	if err != nil {
+		logrus.Errorln("cannot run grpc")
+		return err
+	}
+
 	return nil
 }
 
@@ -132,9 +150,6 @@ func (d *daemon) GetDefaultContainerClient() clients.Client {
 // job's status to preparing and notifies the client.
 func (d *daemon) incomingCallback(id string) error {
 	// TODO: Requires implementation
-	// job, _ := d.GetJobStore().Fetch(id)
-	// role, _ := d.GetRoleStore().Fetch(id)
-
 	return nil
 }
 
