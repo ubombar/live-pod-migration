@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"github.com/sirupsen/logrus"
-	"github.com/ubombar/live-pod-migration/pkg/migratord/v1alpha1"
+	"github.com/ubombar/live-pod-migration/pkg/migratord/daemon"
 )
 
 func main() {
@@ -16,13 +16,16 @@ func main() {
 	flag.IntVar(&port, "port", 4545, "Specifies the port which the migratord is listening.")
 	flag.Parse()
 
-	logrus.Printf("Starting migratord on address %s and port %d\n", address, port)
+	logrus.Infoln("Starting migratord on address %s and port %d\n", address, port)
 
-	mig, err := v1alpha1.NewMigratord(address, port)
-
-	if err != nil {
-		panic(err)
+	config := daemon.DaemonConfig{
+		SelfAddress: address,
+		SelfPort:    port,
+		QueueSize:   64,
 	}
 
-	mig.Run()
+	migratorDaemon := daemon.NewDaemon(&config)
+
+	migratorDaemon.StartDaemon()
+	defer migratorDaemon.StopDaemon()
 }
