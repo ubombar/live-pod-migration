@@ -21,6 +21,9 @@ type Daemon interface {
 	GetContainerClient(name string) clients.Client
 	GetDefaultContainerClient() clients.Client
 	GetRPC() RPC
+
+	// Access configuration
+	GetConfig() DaemonConfig
 }
 
 type daemon struct {
@@ -141,6 +144,14 @@ func (d *daemon) GetContainerClient(name string) clients.Client {
 
 func (d *daemon) GetDefaultContainerClient() clients.Client {
 	return d.GetContainerClient(clients.ClientDocker)
+}
+
+func (d *daemon) GetRPC() RPC {
+	return d.grpc
+}
+
+func (d *daemon) GetConfig() DaemonConfig {
+	return *d.config
 }
 
 // Client: Checks if the container and runtime exists, server is reachable. Also

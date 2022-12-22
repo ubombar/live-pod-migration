@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigratorServiceClient interface {
 	CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error)
+	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
 }
 
 type migratorServiceClient struct {
@@ -42,11 +43,21 @@ func (c *migratorServiceClient) CreateMigrationJob(ctx context.Context, in *Crea
 	return out, nil
 }
 
+func (c *migratorServiceClient) ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error) {
+	out := new(ShareMigrationJobResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/ShareMigrationJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigratorServiceServer is the server API for MigratorService service.
 // All implementations must embed UnimplementedMigratorServiceServer
 // for forward compatibility
 type MigratorServiceServer interface {
 	CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error)
+	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedMigratorServiceServer struct {
 
 func (UnimplementedMigratorServiceServer) CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateMigrationJob not implemented")
+}
+func (UnimplementedMigratorServiceServer) ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShareMigrationJob not implemented")
 }
 func (UnimplementedMigratorServiceServer) mustEmbedUnimplementedMigratorServiceServer() {}
 
@@ -88,6 +102,24 @@ func _MigratorService_CreateMigrationJob_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MigratorService_ShareMigrationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShareMigrationJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigratorServiceServer).ShareMigrationJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MigratorService/ShareMigrationJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigratorServiceServer).ShareMigrationJob(ctx, req.(*ShareMigrationJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MigratorService_ServiceDesc is the grpc.ServiceDesc for MigratorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateMigrationJob",
 			Handler:    _MigratorService_CreateMigrationJob_Handler,
+		},
+		{
+			MethodName: "ShareMigrationJob",
+			Handler:    _MigratorService_ShareMigrationJob_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

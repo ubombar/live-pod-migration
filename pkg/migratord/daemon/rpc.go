@@ -2,10 +2,12 @@ package daemon
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	pb "github.com/ubombar/live-pod-migration/pkg/generated"
 	"google.golang.org/grpc"
 )
@@ -26,17 +28,17 @@ func (r RPCPeer) String() string {
 
 type RPC interface {
 	Run() error
-	PeerCreateMigrationJob(RPCPeer, pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error)
+	// PeerShareMigrationJob(RPCPeer, *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error)
 }
 
 type rpc struct {
 	RPC
 	pb.UnimplementedMigratorServiceServer
 	config RPCConfig
-	daemon *Daemon
+	daemon Daemon
 }
 
-func NewRPC(config RPCConfig, daemon *Daemon) *rpc {
+func NewRPC(config RPCConfig, daemon Daemon) *rpc {
 	r := &rpc{
 		config: config,
 		daemon: daemon,
@@ -63,37 +65,86 @@ func (r *rpc) Run() error {
 }
 
 func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error) {
-	if req.Source == pb.Source_MIGCTL {
-		newReq := *req
-		newReq.PeerAddress = r.config.Address
-		newReq.PeerPort = int32(r.config.Port)
-		newReq.Source = pb.Source_MIGRATORD
-
-		// Fork the request to client and server
-		response, err := r.PeerCreateMigrationJob(RPCPeer{
-			Address: req.PeerAddress,
-			Port:    int(req.PeerPort),
-		}, newReq)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, nil
-	} else {
-
+	peerReq := &pb.ShareMigrationJobRequest{
+		ContainerId:            req.ContainerId,
+		ClientContainerRuntime: req.ClientContainerRuntime,
+		ServerContainerRuntime: req.ServerContainerRuntime,
+		ClientAddress:          r.daemon.GetConfig().SelfAddress,
+		ClientPort:             int32(r.daemon.GetConfig().SelfPort),
+		ServerKey:              req.ServerKey,
+		ServerUser:             req.ServerUser,
+		Method:                 req.Method,
 	}
-}
 
-func (r *rpc) PeerCreateMigrationJob(peer RPCPeer, req pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error) {
-	conn, err := grpc.Dial(peer.String(), grpc.WithInsecure())
+	peerResp, err := r.ShareMigrationJob(ctx, peerReq)
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("call failed to peer ", peer.String()))
+		logrus.Warnln("cannot process migration job")
+		return nil, err
 	}
 
-	client := pb.NewMigratorServiceClient(conn)
+	// Create a new job and add it to queue
+	job := &MigrationJob{
+		MigrationId:       peerResp.MigrationId,
+		ClientIP:          r.daemon.GetConfig().SelfAddress,
+		ClientPort:        r.daemon.GetConfig().SelfPort,
+		ServerIP:          req.ServerAddress,
+		ServerPort:        int(req.ServerPort),
+		ClientContainerID: req.ContainerId,
+		ServerContainerID: "",
+		Status:            StatusPreparing,
+		Running:           true,
+		PrivateKey:        req.ServerKey,
+		Username:          req.ServerUser,
+		CreationDate:      time.Unix(peerResp.CreatonUnixTime, 0),
+		Role:              MigrationRoleClient,
+		Method:            MigrationMethod(req.Method),
+	}
 
-	defer conn.Close()
-	return client.CreateMigrationJob(context.Background(), &req)
+	// Register the job to store
+	r.daemon.GetJobStore().Add(job.MigrationId, &job)
+	r.daemon.GetRoleStore().Add(job.MigrationId, job.Role)
+
+	// Add the job to the queue
+	r.daemon.GetQueue(IncomingQueue).Push(job.MigrationId)
+
+	return &pb.CreateMigrationJobResponse{
+		MigrationId:     peerResp.MigrationId,
+		CreatonUnixTime: peerResp.CreatonUnixTime,
+	}, nil
+}
+
+func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRequest) (*pb.ShareMigrationJobResponse, error) {
+	uuidHash, _ := uuid.NewRandom()
+	migrationId := fmt.Sprint(uuidHash.String())
+
+	// Create a new job and add it to queue
+	job := &MigrationJob{
+		MigrationId:       migrationId,
+		ServerIP:          r.daemon.GetConfig().SelfAddress,
+		ServerPort:        r.daemon.GetConfig().SelfPort,
+		ClientIP:          req.ClientAddress,
+		ClientPort:        int(req.ClientPort),
+		ClientContainerID: req.ContainerId,
+		ServerContainerID: "",
+		Status:            StatusPreparing,
+		Running:           true,
+		PrivateKey:        req.ServerKey,
+		Username:          req.ServerUser,
+		CreationDate:      time.Now(),
+		Role:              MigrationRoleClient,
+		Method:            MigrationMethod(req.Method),
+	}
+
+	// Register the job to store
+	r.daemon.GetJobStore().Add(job.MigrationId, &job)
+	r.daemon.GetRoleStore().Add(job.MigrationId, job.Role)
+
+	// Add the job to the queue
+	r.daemon.GetQueue(IncomingQueue).Push(job.MigrationId)
+
+	return &pb.ShareMigrationJobResponse{
+		MigrationId:     migrationId,
+		CreatonUnixTime: job.CreationDate.Unix(),
+	}, nil
 }

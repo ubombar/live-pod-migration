@@ -1,5 +1,7 @@
 package daemon
 
+import "time"
+
 const (
 	IncomingConsumer      = "incoming-consumer"
 	PreparingConsumer     = "preparing-consumer"
@@ -29,6 +31,26 @@ const (
 	MigrationRoleClient MigrationRole = "migration-role-client"
 )
 
+type MigrationStatus string
+
+const (
+	StatusPreparing     MigrationStatus = "status-preparing"
+	StatusCheckpointing MigrationStatus = "status-checkpointing"
+	StatusTransfering   MigrationStatus = "status-transfering"
+	StatusRestoring     MigrationStatus = "status-restoring"
+	StatusDone          MigrationStatus = "status-done"
+	StatusError         MigrationStatus = "status-error"
+	StatusSyncing       MigrationStatus = "syncing-error"
+)
+
+type MigrationMethod string
+
+const (
+	MethodBasic    MigrationMethod = "method-basic"
+	MethodPrecopy  MigrationMethod = "method-precopy"
+	MethodPostcopy MigrationMethod = "method-postcopy"
+)
+
 type DaemonConfig struct {
 	SelfAddress string
 	SelfPort    int
@@ -51,6 +73,42 @@ func DefaultDaemonConfigsWithAddress(ipaddress string) DaemonConfig {
 	}
 }
 
+// const DefaultCheckpointDirectory = "/home/ubombar/migratord"
+
 type MigrationJob struct {
-	// Lots of things here
+	// Used for describing the migration
+	MigrationId string
+
+	// Client and Servers ip address
+	ClientIP string
+	ServerIP string
+
+	// Client and Servers port
+	ClientPort int
+	ServerPort int
+
+	// Cotnainer identification number
+	ClientContainerID string
+	ServerContainerID string
+
+	// Migration status describes in which stage migration is
+	Status MigrationStatus
+
+	// Shows if the container is running
+	Running bool
+
+	// Private key
+	PrivateKey string
+
+	// Server's username
+	Username string
+
+	// Creation date
+	CreationDate time.Time
+
+	// Role of the migratord that owns this object
+	Role MigrationRole
+
+	// How the migration will be performed
+	Method MigrationMethod
 }
