@@ -9,13 +9,14 @@ import (
 
 type Daemon interface {
 	// Start and stop
-	StartDaemon() error
-	StopDaemon() error
+	Start() error
+	Stop() error
 
 	// Access interfaces
 	GetConsumer(name string) consumers.Consumer
 	GetQueue(name string) structures.Queue
 	GetJobStore() structures.Store
+	GetSyncStore() structures.Store
 	GetRoleStore() structures.Store
 	GetContainerClient(name string) clients.Client
 	GetDefaultContainerClient() clients.Client
@@ -26,6 +27,7 @@ type daemon struct {
 	consumers map[string]consumers.Consumer
 	queues    map[string]structures.Queue
 	jobstore  structures.Store
+	syncstore structures.Store
 	rolestore structures.Store
 	client    map[string]clients.Client
 }
@@ -47,6 +49,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 	// Set the store
 	d.jobstore = structures.NewStore(MigrationJobStore)
 	d.rolestore = structures.NewStore(MigrationRoleStore)
+	d.syncstore = structures.NewStore(MigrationSyncStore)
 
 	// Set the consumers
 	d.consumers = map[string]consumers.Consumer{
@@ -65,14 +68,17 @@ func NewDaemon(config *DaemonConfig) *daemon {
 	return d
 }
 
-func (d *daemon) StartDaemon() error {
+func (d *daemon) Start() error {
 	// Start running all of the consumers
+	for _, consumer := range d.consumers {
+		consumer.Run()
+	}
 
 	// Start gRPC interface
 	return nil
 }
 
-func (d *daemon) StopDaemon() error {
+func (d *daemon) Stop() error {
 	return nil
 }
 
@@ -96,6 +102,10 @@ func (d *daemon) GetQueue(name string) structures.Queue {
 
 func (d *daemon) GetJobStore() structures.Store {
 	return d.jobstore
+}
+
+func (d *daemon) GetSyncStore() structures.Store {
+	return d.syncstore
 }
 
 func (d *daemon) GetRoleStore() structures.Store {

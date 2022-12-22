@@ -19,6 +19,7 @@ const (
 const (
 	MigrationJobStore  = "migration-job-store"
 	MigrationRoleStore = "migration-role-store"
+	MigrationSyncStore = "migration-sync-store"
 )
 
 type MigrationRole string

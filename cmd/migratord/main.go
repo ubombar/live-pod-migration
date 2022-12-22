@@ -26,6 +26,6 @@ func main() {
 
 	migratorDaemon := daemon.NewDaemon(&config)
 
-	migratorDaemon.StartDaemon()
-	defer migratorDaemon.StopDaemon()
+	migratorDaemon.Start()
+	defer migratorDaemon.Stop()
 }
