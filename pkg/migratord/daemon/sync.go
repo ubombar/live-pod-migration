@@ -50,7 +50,7 @@ func (s *Sync) RoleCompleted(role MigrationRole) bool {
 
 type Syncer interface {
 	// Register the migration if with requested attributes. current status and the next job queue.
-	RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string)
+	RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) error
 
 	// Indicates the job has finnished. If the peer still processing it will not add the migration
 	// to the next queue until peer finishes.
@@ -75,7 +75,7 @@ func NewSyncer(daemon Daemon) *syncer {
 	return s
 }
 
-func (s *syncer) RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) {
+func (s *syncer) RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) error {
 	sync := Sync{
 		ClientDone:    false,
 		ServerDone:    false,
@@ -85,6 +85,24 @@ func (s *syncer) RegisterJob(migrationid string, currentStatus MigrationStatus, 
 	}
 
 	s.GetSyncStore().Add(migrationid, sync)
+
+	obj, err := s.d.GetJobStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	jobObj, ok := obj.(MigrationJob)
+
+	if !ok {
+		return errors.New("job store does not contain a migration job")
+	}
+
+	jobObj.Status = currentStatus
+
+	s.d.GetJobStore().Add(migrationid, jobObj)
+
+	return nil
 }
 
 func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
@@ -117,26 +135,25 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 
 	// Add it to the queue
 	if syncObj.AllCompleted() {
-		// Update the status of migration job
-		obj, err = s.d.GetJobStore().Fetch(migrationid)
-
-		if err != nil {
-			return err
-		}
-
-		jobObj, ok := obj.(MigrationJob)
-
-		if !ok {
-			return errors.New("job store does not contain a migration job")
-		}
-
-		jobObj.Status = syncObj.CurrentStatus
-
-		s.d.GetJobStore().Add(migrationid, jobObj)
-
 		// Add the job back to the next specified queue if wanted
 		if syncObj.NextQueueName != NullQueue {
 			s.d.GetQueue(syncObj.NextQueueName).Push(migrationid)
+		} else {
+			obj, err := s.d.GetJobStore().Fetch(migrationid)
+
+			if err != nil {
+				return err
+			}
+
+			jobObj, ok := obj.(MigrationJob)
+
+			if !ok {
+				return errors.New("job store does not contain a migration job")
+			}
+
+			jobObj.Status = StatusDone
+
+			s.d.GetJobStore().Add(migrationid, jobObj)
 		}
 		s.GetSyncStore().Delete(migrationid)
 	}
