@@ -84,6 +84,8 @@ func NewDaemon(config *DaemonConfig) *daemon {
 }
 
 func (d *daemon) Start() error {
+
+	logrus.Infoln("Starting consumers")
 	// Start running all of the consumers
 	for _, consumer := range d.consumers {
 		if err := consumer.Run(); err != nil {
@@ -92,6 +94,7 @@ func (d *daemon) Start() error {
 		}
 	}
 
+	logrus.Infoln("Starting gRPC")
 	// Start gRPC interface
 	err := d.grpc.Run()
 
@@ -180,7 +183,7 @@ func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *Migrat
 	job, ok := obj.(MigrationJob)
 
 	if !ok {
-		return nil, nil, errors.New("migration store does not contain role")
+		return nil, nil, errors.New("migration store does not contain job")
 	}
 
 	return &job, &role, nil

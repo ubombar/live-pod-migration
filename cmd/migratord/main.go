@@ -16,7 +16,7 @@ func main() {
 	flag.IntVar(&port, "port", 4545, "Specifies the port which the migratord is listening.")
 	flag.Parse()
 
-	logrus.Infoln("Starting migratord on address %s and port %d\n", address, port)
+	logrus.Infof("Starting migratord on address %s and port %d\n", address, port)
 
 	config := daemon.DaemonConfig{
 		SelfAddress: address,
@@ -26,6 +26,14 @@ func main() {
 
 	migratorDaemon := daemon.NewDaemon(&config)
 
-	migratorDaemon.Start()
+	stopCh := make(chan interface{})
+
+	err := migratorDaemon.Start()
 	defer migratorDaemon.Stop()
+
+	if err != nil {
+		logrus.Errorln(err)
+	}
+
+	<-stopCh
 }

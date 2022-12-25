@@ -78,8 +78,14 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 		Method:                 req.Method,
 	}
 
-	// There ahould be an RPC call! FIC THIS
-	peerResp, err := r.ShareMigrationJob(ctx, peerReq)
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%d", req.ServerAddress, req.ServerPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := pb.NewMigratorServiceClient(conn)
+	peerResp, err := client.ShareMigrationJob(ctx, peerReq)
 
 	if err != nil {
 		logrus.Warnln("cannot process migration job")
@@ -105,7 +111,7 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	}
 
 	// Register the job to store
-	r.d.GetJobStore().Add(job.MigrationId, &job)
+	r.d.GetJobStore().Add(job.MigrationId, *job)
 	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleClient)
 
 	// Add the job to the queue
@@ -140,7 +146,7 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 	}
 
 	// Register the job to store
-	r.d.GetJobStore().Add(job.MigrationId, &job)
+	r.d.GetJobStore().Add(job.MigrationId, *job)
 	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleServer)
 
 	// Add the job to the queue

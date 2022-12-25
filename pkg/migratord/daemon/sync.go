@@ -77,7 +77,7 @@ func NewSyncer(daemon Daemon) *syncer {
 }
 
 func (s *syncer) RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) {
-	sync := &Sync{
+	sync := Sync{
 		ClientDone:    false,
 		ServerDone:    false,
 		CurrentStatus: currentStatus,
