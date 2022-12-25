@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -29,19 +30,20 @@ func (r RPCPeer) String() string {
 type RPC interface {
 	Run() error
 	// PeerShareMigrationJob(RPCPeer, *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error)
+
 }
 
 type rpc struct {
 	RPC
 	pb.UnimplementedMigratorServiceServer
 	config RPCConfig
-	daemon Daemon
+	d      Daemon
 }
 
 func NewRPC(config RPCConfig, daemon Daemon) *rpc {
 	r := &rpc{
 		config: config,
-		daemon: daemon,
+		d:      daemon,
 	}
 
 	return r
@@ -69,8 +71,8 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 		ContainerId:            req.ContainerId,
 		ClientContainerRuntime: req.ClientContainerRuntime,
 		ServerContainerRuntime: req.ServerContainerRuntime,
-		ClientAddress:          r.daemon.GetConfig().SelfAddress,
-		ClientPort:             int32(r.daemon.GetConfig().SelfPort),
+		ClientAddress:          r.d.GetConfig().SelfAddress,
+		ClientPort:             int32(r.d.GetConfig().SelfPort),
 		ServerKey:              req.ServerKey,
 		ServerUser:             req.ServerUser,
 		Method:                 req.Method,
@@ -86,8 +88,8 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	// Create a new job and add it to queue
 	job := &MigrationJob{
 		MigrationId:       peerResp.MigrationId,
-		ClientIP:          r.daemon.GetConfig().SelfAddress,
-		ClientPort:        r.daemon.GetConfig().SelfPort,
+		ClientIP:          r.d.GetConfig().SelfAddress,
+		ClientPort:        r.d.GetConfig().SelfPort,
 		ServerIP:          req.ServerAddress,
 		ServerPort:        int(req.ServerPort),
 		ClientContainerID: req.ContainerId,
@@ -102,11 +104,11 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	}
 
 	// Register the job to store
-	r.daemon.GetJobStore().Add(job.MigrationId, &job)
-	r.daemon.GetRoleStore().Add(job.MigrationId, job.Role)
+	r.d.GetJobStore().Add(job.MigrationId, &job)
+	r.d.GetRoleStore().Add(job.MigrationId, job.Role)
 
 	// Add the job to the queue
-	r.daemon.GetQueue(IncomingQueue).Push(job.MigrationId)
+	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
 
 	return &pb.CreateMigrationJobResponse{
 		MigrationId:     peerResp.MigrationId,
@@ -121,8 +123,8 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 	// Create a new job and add it to queue
 	job := &MigrationJob{
 		MigrationId:       migrationId,
-		ServerIP:          r.daemon.GetConfig().SelfAddress,
-		ServerPort:        r.daemon.GetConfig().SelfPort,
+		ServerIP:          r.d.GetConfig().SelfAddress,
+		ServerPort:        r.d.GetConfig().SelfPort,
 		ClientIP:          req.ClientAddress,
 		ClientPort:        int(req.ClientPort),
 		ClientContainerID: req.ContainerId,
@@ -137,14 +139,66 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 	}
 
 	// Register the job to store
-	r.daemon.GetJobStore().Add(job.MigrationId, &job)
-	r.daemon.GetRoleStore().Add(job.MigrationId, job.Role)
+	r.d.GetJobStore().Add(job.MigrationId, &job)
+	r.d.GetRoleStore().Add(job.MigrationId, job.Role)
 
 	// Add the job to the queue
-	r.daemon.GetQueue(IncomingQueue).Push(job.MigrationId)
+	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
 
 	return &pb.ShareMigrationJobResponse{
 		MigrationId:     migrationId,
 		CreatonUnixTime: job.CreationDate.Unix(),
 	}, nil
+}
+
+// Invoked on sync notification
+func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequest) (*pb.SyncNotificationResponse, error) {
+	obj, err := r.d.GetSyncer().GetSyncStore().Fetch(req.MigrationId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	syncObj, ok := obj.(Sync)
+
+	if !ok {
+		return nil, errors.New("sync store does not contain sync object")
+	}
+
+	role, err := r.d.GetRoleStore().Fetch(req.MigrationId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var peersRole MigrationRole
+
+	// Find our peers role
+	if role == MigrationRoleClient {
+		peersRole = MigrationRoleServer
+	} else {
+		peersRole = MigrationRoleClient
+	}
+
+	// If they are not waiting for the same state.
+	if syncObj.WaitingStatus != MigrationStatus(req.CurrentStateName) {
+		return nil, errors.New("client and server does not wait for the same state")
+	}
+
+	// Mark peers job as done
+	syncObj.SetCompleted(peersRole)
+
+	// If client and server has completed, then add it to the next queue.
+	if syncObj.AllCompleted() {
+		// Now create a new sync and add it to the qeueue
+		sync := NewSync(req.MigrationId, MigrationStatus(req.CurrentStateName), MigrationStatus(req.NextStateName))
+
+		// Update the sync store with new values
+		r.d.GetSyncer().GetSyncStore().Add(req.MigrationId, sync)
+
+		// Push the job to the next queue.
+		r.d.GetQueue(req.NextQueueName).Push(req.MigrationId)
+	}
+
+	return &pb.SyncNotificationResponse{}, nil
 }

@@ -6,6 +6,8 @@ service MigratorService {
     rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
 
     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
+
+    rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
 }
 
 enum Source {
@@ -43,6 +45,17 @@ message ShareMigrationJobRequest {
 message ShareMigrationJobResponse {
     string migration_id = 1;
     int64 creaton_unix_time = 2;
+}
+
+message SyncNotificationRequest {
+    string migration_id = 1;
+    string next_queue_name = 2;
+    string current_state_name = 3;
+    string next_state_name = 4;
+}
+
+message SyncNotificationResponse {
+    
 }
 
 // service MigratorService {

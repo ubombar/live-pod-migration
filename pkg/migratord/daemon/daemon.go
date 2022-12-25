@@ -16,8 +16,8 @@ type Daemon interface {
 	GetConsumer(name string) consumers.Consumer
 	GetQueue(name string) structures.Queue
 	GetJobStore() structures.Store
-	GetSyncStore() structures.Store
 	GetRoleStore() structures.Store
+	GetSyncer() Syncer
 	GetContainerClient(name string) clients.Client
 	GetDefaultContainerClient() clients.Client
 	GetRPC() RPC
@@ -31,10 +31,11 @@ type daemon struct {
 	consumers map[string]consumers.Consumer
 	queues    map[string]structures.Queue
 	jobstore  structures.Store
-	syncstore structures.Store
 	rolestore structures.Store
-	client    map[string]clients.Client
-	grpc      RPC
+
+	syncer Syncer
+	client map[string]clients.Client
+	grpc   RPC
 }
 
 func NewDaemon(config *DaemonConfig) *daemon {
@@ -54,7 +55,6 @@ func NewDaemon(config *DaemonConfig) *daemon {
 	// Set the store
 	d.jobstore = structures.NewStore(MigrationJobStore)
 	d.rolestore = structures.NewStore(MigrationRoleStore)
-	d.syncstore = structures.NewStore(MigrationSyncStore)
 
 	// Set the consumers
 	d.consumers = map[string]consumers.Consumer{
@@ -64,6 +64,8 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		TransferingConsumer:   consumers.NewConsumer(d.GetQueue(TransferingQueue), d.transferingCallback),
 		RestoringConsumer:     consumers.NewConsumer(d.GetQueue(RestoringQueue), d.restoringCallback),
 	}
+
+	d.syncer = NewSyncer(d)
 
 	// Set grpc
 	d.grpc = NewRPC(RPCConfig{
@@ -125,12 +127,12 @@ func (d *daemon) GetJobStore() structures.Store {
 	return d.jobstore
 }
 
-func (d *daemon) GetSyncStore() structures.Store {
-	return d.syncstore
-}
-
 func (d *daemon) GetRoleStore() structures.Store {
 	return d.rolestore
+}
+
+func (d *daemon) GetSyncer() Syncer {
+	return d.syncer
 }
 
 func (d *daemon) GetContainerClient(name string) clients.Client {
