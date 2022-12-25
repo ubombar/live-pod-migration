@@ -6,6 +6,7 @@ type Store interface {
 	Add(name string, obj interface{})
 	Fetch(name string) (interface{}, error)
 	Name() string
+	Delete(name string) error
 }
 
 type store struct {
@@ -38,4 +39,16 @@ func (m *store) Fetch(name string) (interface{}, error) {
 // Get the name of the store
 func (m *store) Name() string {
 	return m.name
+}
+
+func (m *store) Delete(name string) error {
+	_, ok := m.store[name]
+
+	if !ok {
+		return errors.New("item is not in the store")
+	}
+
+	delete(m.store, name)
+
+	return nil
 }

@@ -15,9 +15,8 @@ type Sync struct {
 	// Have server finnished pricessing for current status
 	ServerDone bool
 
-	// Current and next status for job
+	// Current status for job
 	CurrentStatus MigrationStatus
-	NextStatus    MigrationStatus
 
 	// Name of the queue it will be appended after finishing this state
 	NextQueueName string
@@ -93,7 +92,6 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 
 	if err != nil {
 		return err
-
 	}
 
 	syncObj, ok := obj.(Sync)
@@ -102,17 +100,19 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 		return errors.New("sync store did not get a sync object")
 	}
 
-	if role == MigrationRoleClient {
-		syncObj.ClientDone = true
+	// Return if role is already completed
+	if syncObj.RoleCompleted(role) {
+		return nil
 	} else {
-		syncObj.ServerDone = true
-	}
+		syncObj.SetCompleted(role)
+		s.GetSyncStore().Add(migrationid, syncObj)
 
-	// Notify RPC
-	err = s.d.GetRPC().SendSyncNotification(migrationid, syncObj.CurrentStatus, role.PeersRole())
+		// Notify RPC
+		err = s.d.GetRPC().SendSyncNotification(migrationid, syncObj.CurrentStatus, role.PeersRole())
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Add it to the queue
@@ -130,7 +130,7 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 			return errors.New("job store does not contain a migration job")
 		}
 
-		jobObj.Status = syncObj.NextStatus
+		jobObj.Status = syncObj.CurrentStatus
 
 		s.d.GetJobStore().Add(migrationid, jobObj)
 
@@ -138,6 +138,7 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 		if syncObj.NextQueueName != NullQueue {
 			s.d.GetQueue(syncObj.NextQueueName).Push(migrationid)
 		}
+		s.GetSyncStore().Delete(migrationid)
 	}
 
 	return nil

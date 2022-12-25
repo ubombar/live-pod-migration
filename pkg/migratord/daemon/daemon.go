@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"errors"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/ubombar/live-pod-migration/pkg/migratord/clients"
@@ -192,14 +193,16 @@ func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *Migrat
 // Handle migration
 func (d *daemon) incomingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
+	_, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
 		return err
 	}
 
 	// TODO: Requires implementation
-	logrus.Infoln(*job)
+	logrus.Infoln("starting incoming-callback")
+	time.Sleep(3 * time.Second)
+	logrus.Infoln("finnished incoming-callback")
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
@@ -207,21 +210,23 @@ func (d *daemon) incomingCallback(migrationid string) error {
 // Handle migration
 func (d *daemon) preparingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusPreparing, CheckpointingQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
+	_, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
 		return err
 	}
 
 	// TODO: Requires implementation
-	logrus.Infoln(*job)
+	logrus.Infoln("starting preparing-callback")
+	time.Sleep(3 * time.Second)
+	logrus.Infoln("finnished preparing-callback")
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
 func (d *daemon) checkpointingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	d.GetSyncer().RegisterJob(migrationid, StatusCheckpointing, TransferingQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
@@ -230,13 +235,14 @@ func (d *daemon) checkpointingCallback(migrationid string) error {
 
 	// TODO: Requires implementation
 	logrus.Infoln(*job)
+	time.Sleep(10 * time.Second)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
 func (d *daemon) transferingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	d.GetSyncer().RegisterJob(migrationid, StatusTransfering, RestoringQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
@@ -245,13 +251,14 @@ func (d *daemon) transferingCallback(migrationid string) error {
 
 	// TODO: Requires implementation
 	logrus.Infoln(*job)
+	time.Sleep(10 * time.Second)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
 func (d *daemon) restoringCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	d.GetSyncer().RegisterJob(migrationid, StatusRestoring, NullQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
@@ -260,6 +267,7 @@ func (d *daemon) restoringCallback(migrationid string) error {
 
 	// TODO: Requires implementation
 	logrus.Infoln(*job)
+	time.Sleep(10 * time.Second)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
