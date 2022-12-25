@@ -1,6 +1,9 @@
 package daemon
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	IncomingConsumer      = "incoming-consumer"
@@ -16,6 +19,7 @@ const (
 	CheckpointingQueue = "checkpointing-queue"
 	TransferingQueue   = "transfering-queue"
 	RestoringQueue     = "restoring-queue"
+	NullQueue          = ""
 )
 
 const (
@@ -31,9 +35,18 @@ const (
 	MigrationRoleClient MigrationRole = "migration-role-client"
 )
 
+func (r MigrationRole) PeersRole() MigrationRole {
+	if r == MigrationRoleClient {
+		return MigrationRoleServer
+	} else {
+		return MigrationRoleClient
+	}
+}
+
 type MigrationStatus string
 
 const (
+	StatusIncoming      MigrationStatus = "status-incoming"
 	StatusPreparing     MigrationStatus = "status-preparing"
 	StatusCheckpointing MigrationStatus = "status-checkpointing"
 	StatusTransfering   MigrationStatus = "status-transfering"
@@ -111,4 +124,12 @@ type MigrationJob struct {
 
 	// How the migration will be performed
 	Method MigrationMethod
+}
+
+func (j MigrationJob) AddressString(role MigrationRole) string {
+	if role == MigrationRoleClient {
+		return fmt.Sprintf("%s:%d", j.ClientIP, j.ClientPort)
+	} else {
+		return fmt.Sprintf("%s:%d", j.ServerIP, j.ServerPort)
+	}
 }

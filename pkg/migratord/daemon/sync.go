@@ -16,7 +16,11 @@ type Sync struct {
 	ServerDone bool
 
 	// Current and next status for job
-	WaitingStatus MigrationStatus
+	CurrentStatus MigrationStatus
+	NextStatus    MigrationStatus
+
+	// Name of the queue it will be appended after finishing this state
+	NextQueueName string
 
 	// Migration id
 	MigrationId string
@@ -46,8 +50,12 @@ func (s *Sync) RoleCompleted(role MigrationRole) bool {
 }
 
 type Syncer interface {
-	// Marks the job with migrationid as complete. This will add the job to the next
-	SyncStatus(migrationid string, callersRole MigrationRole, currentStatus MigrationStatus, nextStatus MigrationStatus, nextQueueName string) error
+	// Register the migration if with requested attributes. current status and the next job queue.
+	RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string)
+
+	// Indicates the job has finnished. If the peer still processing it will not add the migration
+	// to the next queue until peer finishes.
+	FinishJob(migrationid string, role MigrationRole) error
 
 	// Get the stores
 	GetSyncStore() structures.Store
@@ -68,59 +76,71 @@ func NewSyncer(daemon Daemon) *syncer {
 	return s
 }
 
-func NewSync(migrationid string, currentStatus MigrationStatus, nextStatus MigrationStatus) *Sync {
-	return &Sync{
+func (s *syncer) RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) {
+	sync := &Sync{
 		ClientDone:    false,
 		ServerDone:    false,
-		WaitingStatus: nextStatus,
+		CurrentStatus: currentStatus,
 		MigrationId:   migrationid,
+		NextQueueName: nextQueueName,
 	}
+
+	s.GetSyncStore().Add(migrationid, sync)
 }
 
-// SyncStatus used for syncing stages of migration between server and clients. Both server and client must be
-// done for migration to go to the new stage.
-// This requires the migrationid, callers role, current and next status.
-// If the syncing is successful meaning both server and client finnished processing, the job is added to the next queue.
-// d
-func (s *syncer) SyncStatus(migrationid string, callersRole MigrationRole, currentStatus MigrationStatus, nextStatus MigrationStatus, nextQueueName string) error {
+func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 	obj, err := s.GetSyncStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+
+	}
+
+	syncObj, ok := obj.(Sync)
+
+	if !ok {
+		return errors.New("sync store did not get a sync object")
+	}
+
+	if role == MigrationRoleClient {
+		syncObj.ClientDone = true
+	} else {
+		syncObj.ServerDone = true
+	}
+
+	// Notify RPC
+	err = s.d.GetRPC().SendSyncNotification(migrationid, syncObj.CurrentStatus, role.PeersRole())
 
 	if err != nil {
 		return err
 	}
 
-	if syncObj, ok := obj.(Sync); !ok {
-		return errors.New("sync-store did not get a sync object")
-	} else {
-		// Check if current status, if not same discard it with error.
-		if syncObj.WaitingStatus != currentStatus {
-			return errors.New("unknown current status")
+	// Add it to the queue
+	if syncObj.AllCompleted() {
+		// Update the status of migration job
+		obj, err = s.d.GetJobStore().Fetch(migrationid)
+
+		if err != nil {
+			return err
 		}
 
-		// This means we have called this twice, no need to try to sync again.
-		if syncObj.RoleCompleted(callersRole) {
-			return nil
+		jobObj, ok := obj.(MigrationJob)
+
+		if !ok {
+			return errors.New("job store does not contain a migration job")
 		}
 
-		// Set the role completed and also notify the other peer.
-		syncObj.SetCompleted(callersRole)
+		jobObj.Status = syncObj.NextStatus
 
-		// Notify the peer with RPC
-		if !syncObj.AllCompleted() {
-			// s.d.GetRPC().SyncNotification()
-		} else {
-			sync := NewSync(migrationid, currentStatus, nextStatus)
+		s.d.GetJobStore().Add(migrationid, jobObj)
 
-			// Update the sync store with new values
-			s.GetSyncStore().Add(migrationid, sync)
-
-			// Push the job to the next queue.
-			s.d.GetQueue(nextQueueName).Push(migrationid)
+		// Add the job back to the next specified queue if wanted
+		if syncObj.NextQueueName != NullQueue {
+			s.d.GetQueue(syncObj.NextQueueName).Push(migrationid)
 		}
-
-		return nil
 	}
 
+	return nil
 }
 
 func (s *syncer) GetSyncStore() structures.Store {

@@ -1,6 +1,8 @@
 package daemon
 
 import (
+	"errors"
+
 	"github.com/sirupsen/logrus"
 	"github.com/ubombar/live-pod-migration/pkg/migratord/clients"
 	"github.com/ubombar/live-pod-migration/pkg/migratord/consumers"
@@ -156,36 +158,105 @@ func (d *daemon) GetConfig() DaemonConfig {
 	return *d.config
 }
 
-// Client: Checks if the container and runtime exists, server is reachable. Also
-// shares the job with the server.
-//
-// Server: Checks if the container, runtime and image exists. If good, changes the
-// job's status to preparing and notifies the client.
-func (d *daemon) incomingCallback(id string) error {
-	// TODO: Requires implementation
-	return nil
+func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *MigrationRole, error) {
+	obj, err := d.GetRoleStore().Fetch(migrationid)
+
+	if err != nil {
+		return nil, nil, errors.New("cannot get role of migrationid")
+	}
+
+	role, ok := obj.(MigrationRole)
+
+	if !ok {
+		return nil, nil, errors.New("migration store does not contain role")
+	}
+
+	obj, err = d.GetJobStore().Fetch(migrationid)
+
+	if err != nil {
+		return nil, nil, errors.New("cannot get job of migrationid")
+	}
+
+	job, ok := obj.(MigrationJob)
+
+	if !ok {
+		return nil, nil, errors.New("migration store does not contain role")
+	}
+
+	return &job, &role, nil
 }
 
 // Handle migration
-func (d *daemon) preparingCallback(id string) error {
+func (d *daemon) incomingCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Requires implementation
-	return nil
+	logrus.Infoln(*job)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
-func (d *daemon) checkpointingCallback(id string) error {
+func (d *daemon) preparingCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusPreparing, CheckpointingQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Requires implementation
-	return nil
+	logrus.Infoln(*job)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
-func (d *daemon) transferingCallback(id string) error {
+func (d *daemon) checkpointingCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Requires implementation
-	return nil
+	logrus.Infoln(*job)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
 // Handle migration
-func (d *daemon) restoringCallback(id string) error {
+func (d *daemon) transferingCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: Requires implementation
-	return nil
+	logrus.Infoln(*job)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
+}
+
+// Handle migration
+func (d *daemon) restoringCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Requires implementation
+	logrus.Infoln(*job)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
 }

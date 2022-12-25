@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	pb "github.com/ubombar/live-pod-migration/pkg/generated"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type RPCConfig struct {
@@ -29,8 +30,7 @@ func (r RPCPeer) String() string {
 
 type RPC interface {
 	Run() error
-	// PeerShareMigrationJob(RPCPeer, *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error)
-
+	SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole) error
 }
 
 type rpc struct {
@@ -78,6 +78,7 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 		Method:                 req.Method,
 	}
 
+	// There ahould be an RPC call! FIC THIS
 	peerResp, err := r.ShareMigrationJob(ctx, peerReq)
 
 	if err != nil {
@@ -105,7 +106,7 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 
 	// Register the job to store
 	r.d.GetJobStore().Add(job.MigrationId, &job)
-	r.d.GetRoleStore().Add(job.MigrationId, job.Role)
+	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleClient)
 
 	// Add the job to the queue
 	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
@@ -134,13 +135,13 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 		PrivateKey:        req.ServerKey,
 		Username:          req.ServerUser,
 		CreationDate:      time.Now(),
-		Role:              MigrationRoleClient,
+		Role:              MigrationRoleServer,
 		Method:            MigrationMethod(req.Method),
 	}
 
 	// Register the job to store
 	r.d.GetJobStore().Add(job.MigrationId, &job)
-	r.d.GetRoleStore().Add(job.MigrationId, job.Role)
+	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleServer)
 
 	// Add the job to the queue
 	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
@@ -153,52 +154,56 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 
 // Invoked on sync notification
 func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequest) (*pb.SyncNotificationResponse, error) {
-	obj, err := r.d.GetSyncer().GetSyncStore().Fetch(req.MigrationId)
+	// Get the migration role
+	obj, err := r.d.GetRoleStore().Fetch(req.MigrationId)
 
 	if err != nil {
 		return nil, err
 	}
 
-	syncObj, ok := obj.(Sync)
+	roleObj, ok := obj.(MigrationRole)
 
 	if !ok {
-		return nil, errors.New("sync store does not contain sync object")
+		return nil, errors.New("role store does not contain role")
 	}
 
-	role, err := r.d.GetRoleStore().Fetch(req.MigrationId)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var peersRole MigrationRole
-
-	// Find our peers role
-	if role == MigrationRoleClient {
-		peersRole = MigrationRoleServer
-	} else {
-		peersRole = MigrationRoleClient
-	}
-
-	// If they are not waiting for the same state.
-	if syncObj.WaitingStatus != MigrationStatus(req.CurrentStateName) {
-		return nil, errors.New("client and server does not wait for the same state")
-	}
-
-	// Mark peers job as done
-	syncObj.SetCompleted(peersRole)
-
-	// If client and server has completed, then add it to the next queue.
-	if syncObj.AllCompleted() {
-		// Now create a new sync and add it to the qeueue
-		sync := NewSync(req.MigrationId, MigrationStatus(req.CurrentStateName), MigrationStatus(req.NextStateName))
-
-		// Update the sync store with new values
-		r.d.GetSyncer().GetSyncStore().Add(req.MigrationId, sync)
-
-		// Push the job to the next queue.
-		r.d.GetQueue(req.NextQueueName).Push(req.MigrationId)
-	}
+	// Invoke finnish job function of syncer with peers role.
+	r.d.GetSyncer().FinishJob(req.MigrationId, roleObj.PeersRole())
 
 	return &pb.SyncNotificationResponse{}, nil
+}
+
+func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole) error {
+	obj, err := r.d.GetJobStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	jobObj, ok := obj.(MigrationJob)
+
+	if !ok {
+		return errors.New("job store does not contain a job object")
+	}
+
+	address := jobObj.AddressString(peersRole)
+
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	if err != nil {
+		return err
+	}
+
+	client := pb.NewMigratorServiceClient(conn)
+
+	_, err = client.SyncNotification(context.Background(), &pb.SyncNotificationRequest{
+		MigrationId:   migrationid,
+		StateFinished: string(statusFinished),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

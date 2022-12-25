@@ -49,9 +49,7 @@ message ShareMigrationJobResponse {
 
 message SyncNotificationRequest {
     string migration_id = 1;
-    string next_queue_name = 2;
-    string current_state_name = 3;
-    string next_state_name = 4;
+    string state_finished = 2;
 }
 
 message SyncNotificationResponse {
