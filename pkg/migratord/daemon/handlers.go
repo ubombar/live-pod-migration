@@ -97,7 +97,7 @@ func (d *daemon) errorCallback(migrationid string) error {
 		return err
 	}
 
-	logrus.Infoln("Migration", job.MigrationId, "finnished successfully")
+	logrus.Infoln("Migration", job.MigrationId, "finnished with error")
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
