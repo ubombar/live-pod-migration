@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,7 +126,7 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 
 func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRequest) (*pb.ShareMigrationJobResponse, error) {
 	uuidHash, _ := uuid.NewRandom()
-	migrationId := fmt.Sprint(uuidHash.String())
+	migrationId := fmt.Sprint(strings.ReplaceAll(uuidHash.String(), "-", ""))
 
 	// Create a new job and add it to queue
 	job := &MigrationJob{

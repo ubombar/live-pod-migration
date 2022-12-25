@@ -11,6 +11,7 @@ const (
 	CheckpointingConsumer = "checkpointing-consumer"
 	TransferingConsumer   = "transfering-consumer"
 	RestoringConsumer     = "restoring-consumer"
+	DoneConsumer          = "done-consumer"
 )
 
 const (
@@ -19,6 +20,7 @@ const (
 	CheckpointingQueue = "checkpointing-queue"
 	TransferingQueue   = "transfering-queue"
 	RestoringQueue     = "restoring-queue"
+	DoneQueue          = "done-queue"
 	NullQueue          = ""
 )
 

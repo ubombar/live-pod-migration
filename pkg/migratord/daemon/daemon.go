@@ -52,6 +52,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		CheckpointingQueue: structures.NewQueue(CheckpointingQueue, config.QueueSize),
 		TransferingQueue:   structures.NewQueue(TransferingQueue, config.QueueSize),
 		RestoringQueue:     structures.NewQueue(RestoringQueue, config.QueueSize),
+		DoneQueue:          structures.NewQueue(DoneQueue, config.QueueSize),
 	}
 
 	// Set the store
@@ -65,6 +66,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		CheckpointingConsumer: consumers.NewConsumer(d.GetQueue(CheckpointingQueue), d.checkpointingCallback),
 		TransferingConsumer:   consumers.NewConsumer(d.GetQueue(TransferingQueue), d.transferingCallback),
 		RestoringConsumer:     consumers.NewConsumer(d.GetQueue(RestoringQueue), d.restoringCallback),
+		DoneConsumer:          consumers.NewConsumer(d.GetQueue(DoneQueue), d.doneCallback),
 	}
 
 	d.syncer = NewSyncer(d)
@@ -246,7 +248,7 @@ func (d *daemon) transferingCallback(migrationid string) error {
 
 // Handle migration
 func (d *daemon) restoringCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusRestoring, NullQueue)
+	d.GetSyncer().RegisterJob(migrationid, StatusRestoring, DoneQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
 
 	if err != nil {
@@ -254,6 +256,20 @@ func (d *daemon) restoringCallback(migrationid string) error {
 	}
 
 	logrus.Infoln("finnished callback: ", job.Status)
+
+	return d.GetSyncer().FinishJob(migrationid, *role)
+}
+
+// Handle migration
+func (d *daemon) doneCallback(migrationid string) error {
+	d.GetSyncer().RegisterJob(migrationid, StatusDone, NullQueue)
+	job, role, err := d.getMigrationObjects(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	logrus.Infoln("Migration finnished succesfully", job.MigrationId)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
