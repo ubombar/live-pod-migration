@@ -12,6 +12,7 @@ const (
 	TransferingConsumer   = "transfering-consumer"
 	RestoringConsumer     = "restoring-consumer"
 	DoneConsumer          = "done-consumer"
+	ErrorConsumer         = "error-consumer"
 )
 
 const (
@@ -21,6 +22,7 @@ const (
 	TransferingQueue   = "transfering-queue"
 	RestoringQueue     = "restoring-queue"
 	DoneQueue          = "done-queue"
+	ErrorQueue         = "error-queue"
 	NullQueue          = ""
 )
 
@@ -67,28 +69,31 @@ const (
 )
 
 type DaemonConfig struct {
-	SelfAddress string
-	SelfPort    int
-	QueueSize   int
+	SelfAddress         string
+	SelfPort            int
+	QueueSize           int
+	CheckpointDirectory string
 }
 
 func DefaultDaemonConfigs() DaemonConfig {
 	return DaemonConfig{
-		SelfAddress: "localhost",
-		SelfPort:    4545,
-		QueueSize:   64,
+		SelfAddress:         "localhost",
+		SelfPort:            4545,
+		QueueSize:           64,
+		CheckpointDirectory: DefaultCheckpointDirectory,
 	}
 }
 
 func DefaultDaemonConfigsWithAddress(ipaddress string) DaemonConfig {
 	return DaemonConfig{
-		SelfAddress: ipaddress,
-		SelfPort:    4545,
-		QueueSize:   64,
+		SelfAddress:         ipaddress,
+		SelfPort:            4545,
+		QueueSize:           64,
+		CheckpointDirectory: DefaultCheckpointDirectory,
 	}
 }
 
-// const DefaultCheckpointDirectory = "/home/ubombar/migratord"
+const DefaultCheckpointDirectory = "/var/lib/migratord/checkpoints"
 
 type MigrationJob struct {
 	// Used for describing the migration

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	pb "github.com/ubombar/live-pod-migration/pkg/generated"
@@ -32,11 +33,10 @@ var jobCmd = &cobra.Command{
 			return
 		}
 
-		// privateKey, err := os.ReadFile(serverPrivateKeyPath)
-		privateKey := ""
+		privateKey, err := os.ReadFile(serverPrivateKeyPath)
 
 		if err != nil {
-			fmt.Printf("Cannot load server's private key")
+			fmt.Println("Cannot load server's private key")
 			return
 		}
 

@@ -53,6 +53,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		TransferingQueue:   structures.NewQueue(TransferingQueue, config.QueueSize),
 		RestoringQueue:     structures.NewQueue(RestoringQueue, config.QueueSize),
 		DoneQueue:          structures.NewQueue(DoneQueue, config.QueueSize),
+		ErrorQueue:         structures.NewQueue(ErrorQueue, config.QueueSize),
 	}
 
 	// Set the store
@@ -67,6 +68,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		TransferingConsumer:   consumers.NewConsumer(d.GetQueue(TransferingQueue), d.transferingCallback),
 		RestoringConsumer:     consumers.NewConsumer(d.GetQueue(RestoringQueue), d.restoringCallback),
 		DoneConsumer:          consumers.NewConsumer(d.GetQueue(DoneQueue), d.doneCallback),
+		ErrorConsumer:         consumers.NewConsumer(d.GetQueue(ErrorQueue), d.errorCallback),
 	}
 
 	d.syncer = NewSyncer(d)
@@ -86,8 +88,6 @@ func NewDaemon(config *DaemonConfig) *daemon {
 }
 
 func (d *daemon) Start() error {
-
-	logrus.Infoln("Starting consumers")
 	// Start running all of the consumers
 	for _, consumer := range d.consumers {
 		if err := consumer.Run(); err != nil {
@@ -96,7 +96,6 @@ func (d *daemon) Start() error {
 		}
 	}
 
-	logrus.Infoln("Starting gRPC")
 	// Start gRPC interface
 	err := d.grpc.Run()
 
@@ -104,6 +103,8 @@ func (d *daemon) Start() error {
 		logrus.Errorln("cannot run grpc")
 		return err
 	}
+
+	logrus.Infoln("Started queue-consumers and rpc interface.")
 
 	return nil
 }
@@ -189,87 +190,4 @@ func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *Migrat
 	}
 
 	return &job, &role, nil
-}
-
-// Handle migration
-func (d *daemon) incomingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-	logrus.Infoln("finnished callback: ", job.Status)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
-}
-
-// Handle migration
-func (d *daemon) preparingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusPreparing, CheckpointingQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infoln("finnished callback: ", job.Status)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
-}
-
-// Handle migration
-func (d *daemon) checkpointingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusCheckpointing, TransferingQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infoln("finnished callback: ", job.Status)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
-}
-
-// Handle migration
-func (d *daemon) transferingCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusTransfering, RestoringQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infoln("finnished callback: ", job.Status)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
-}
-
-// Handle migration
-func (d *daemon) restoringCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusRestoring, DoneQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infoln("finnished callback: ", job.Status)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
-}
-
-// Handle migration
-func (d *daemon) doneCallback(migrationid string) error {
-	d.GetSyncer().RegisterJob(migrationid, StatusDone, NullQueue)
-	job, role, err := d.getMigrationObjects(migrationid)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infoln("Migration finnished succesfully", job.MigrationId)
-
-	return d.GetSyncer().FinishJob(migrationid, *role)
 }
