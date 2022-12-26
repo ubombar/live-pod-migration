@@ -50,88 +50,11 @@ message ShareMigrationJobResponse {
 message SyncNotificationRequest {
     string migration_id = 1;
     string state_finished = 2;
+    
+    string error_message = 3;
+    bool finished_successful = 4;
 }
 
 message SyncNotificationResponse {
     
 }
-
-// service MigratorService {
-//     // Tells any migratord to get in client role.
-//     rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
-
-//     // Migratord with client role invokes it's peer. If works it's peer gets in a server role.
-//     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
-
-//     // Updates the status of the migration, invoked in server.
-//     rpc UpdateMigrationStatus (UpdateMigrationStatusRequest) returns (UpdateMigrationStatusResponse);
-
-//     // Gets the status of the migration, invoked in server.
-//     rpc GetMigrationStatus (GetMigrationStatusRequest) returns (GetMigrationStatusResponse);
-// }
-
-// enum MigrationMethod {
-//     Basic = 0;
-//     Precopy = 1;
-//     Postcopy = 2;
-// }
-
-// message CreateMigrationJobRequest {
-//     string peer_address = 1;
-//     int32 peer_port = 2;
-//     string container_id = 3;
-//     MigrationMethod method = 4;
-//     string private_key = 5;
-//     string server_username = 6;
-// }
-
-// message CreateMigrationJobResponse {
-//     string migration_id = 1;
-//     bool accepted = 2;
-//     int64 creaton_unix_time = 3;
-// }
-
-// message ShareMigrationJobRequest {
-//     string peer_address = 1;
-//     int32 peer_port = 2;
-//     string container_id = 3;
-//     string container_image = 4;
-//     string container_name = 5;
-//     MigrationMethod method = 6;
-//     string private_key = 7;
-// }
-
-// message ShareMigrationJobResponse {
-//     string migration_id = 1;
-//     bool accepted = 2;
-//     int64 creaton_unix_time = 3;
-//     string server_container_id = 4;
-// }
-
-// message UpdateMigrationStatusRequest {
-//     string migration_id = 1;    
-//     string new_status = 2;
-//     bool new_running = 4;
-//     optional string description = 3;
-// }
-
-// message UpdateMigrationStatusResponse {
-
-// }
-
-// message GetMigrationStatusRequest {
-//     string migration_id = 1;
-// }
-
-// message GetMigrationStatusResponse {
-//     string migration_id = 1;
-//     string server_ip = 2;
-//     string client_ip = 3;
-//     string server_container_id = 4;
-//     string migration_status = 5;
-//     bool running = 6;
-//     int64 migration_time = 7;
-//     string migration_role = 8;
-//     string migration_method = 9;
-//     string client_container_id = 10;
-// }

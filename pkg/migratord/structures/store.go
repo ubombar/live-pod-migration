@@ -44,6 +44,7 @@ func (m *store) Fetch(name string) (interface{}, error) {
 	if obj, ok := m.store[name]; ok {
 		return obj, nil
 	}
+
 	return nil, errors.New("cannot find interface with given name")
 }
 

@@ -55,12 +55,18 @@ type Syncer interface {
 	// Changes the jobs nextqueue
 	ChangeNextQueue(migrationid string, nextQueueName string) error
 
+	// Changes the jobs nextqueue with error
+	ChangeToErrorQueue(migrationid string, err error) error
+
 	// Indicates the job has finnished. If the peer still processing it will not add the migration
 	// to the next queue until peer finishes.
 	FinishJob(migrationid string, role MigrationRole) error
 
 	// Get the stores
 	GetSyncStore() structures.Store
+
+	// Notify in case of an error
+	FinishJobWithError(migrationid string, jobError error, role MigrationRole) error
 }
 
 type syncer struct {
@@ -141,6 +147,18 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 		return errors.New("sync store did not get a sync object")
 	}
 
+	obj, err = s.d.GetJobStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	jobObj, ok := obj.(MigrationJob)
+
+	if !ok {
+		return errors.New("sync store did not get a sync object")
+	}
+
 	// Return if role is already completed
 	if syncObj.RoleCompleted(role) {
 		return nil
@@ -149,7 +167,7 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 		s.GetSyncStore().Add(migrationid, syncObj)
 
 		// Notify RPC
-		err = s.d.GetRPC().SendSyncNotification(migrationid, syncObj.CurrentStatus, role.PeersRole())
+		err = s.d.GetRPC().SendSyncNotification(migrationid, syncObj.CurrentStatus, role.PeersRole(), jobObj.Error)
 
 		if err != nil {
 			return err
@@ -182,6 +200,48 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 	}
 
 	return nil
+}
+
+// Calls the FinishJob but changes the nextQueue to error queue and job.Error to the given error.
+func (s *syncer) FinishJobWithError(migrationid string, jobError error, role MigrationRole) error {
+	obj, err := s.GetSyncStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	syncObj, ok := obj.(Sync)
+
+	if !ok {
+		return errors.New("sync store did not get a sync object")
+	}
+
+	// Set the next queue to error queue
+	if syncObj.NextQueueName != NullQueue {
+		syncObj.NextQueueName = ErrorQueue
+	}
+
+	// Update the syncObject
+	s.GetSyncStore().Add(migrationid, syncObj)
+
+	obj, err = s.d.GetJobStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	jobObj, ok := obj.(MigrationJob)
+
+	if !ok {
+		return errors.New("sync store did not get a sync object")
+	}
+
+	jobObj.Error = jobError
+
+	// Update the job object
+	s.d.GetJobStore().Add(migrationid, jobObj)
+
+	return s.FinishJob(migrationid, role)
 }
 
 func (s *syncer) GetSyncStore() structures.Store {

@@ -31,7 +31,7 @@ func (r RPCPeer) String() string {
 
 type RPC interface {
 	Run() error
-	SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole) error
+	SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole, jobError error) error
 }
 
 type rpc struct {
@@ -174,13 +174,17 @@ func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequ
 		return nil, errors.New("role store does not contain role")
 	}
 
-	// Invoke finnish job function of syncer with peers role.
-	r.d.GetSyncer().FinishJob(req.MigrationId, roleObj.PeersRole())
+	// Invoke finnish job function of syncer with peers role. If finished with error, invoke FinishJobWithError
+	if req.FinishedSuccessful {
+		r.d.GetSyncer().FinishJob(req.MigrationId, roleObj.PeersRole())
+	} else {
+		r.d.GetSyncer().FinishJobWithError(req.MigrationId, errors.New(req.ErrorMessage), roleObj.PeersRole())
+	}
 
 	return &pb.SyncNotificationResponse{}, nil
 }
 
-func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole) error {
+func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole, jobError error) error {
 	obj, err := r.d.GetJobStore().Fetch(migrationid)
 
 	if err != nil {
@@ -203,9 +207,18 @@ func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationS
 
 	client := pb.NewMigratorServiceClient(conn)
 
+	errorMessage := ""
+	finishedSuccessful := jobError == nil
+
+	if !finishedSuccessful {
+		errorMessage = jobError.Error()
+	}
+
 	_, err = client.SyncNotification(context.Background(), &pb.SyncNotificationRequest{
-		MigrationId:   migrationid,
-		StateFinished: string(statusFinished),
+		MigrationId:        migrationid,
+		StateFinished:      string(statusFinished),
+		ErrorMessage:       errorMessage,
+		FinishedSuccessful: finishedSuccessful,
 	})
 
 	if err != nil {

@@ -30,5 +30,4 @@ type Client interface {
 	// Checkpointing functions
 	GetContainerInfo(containerId string) (*ContainerInfo, error)
 	GetCheckpointInfo(checkpointid string) (*CheckpointInfo, error)
-	// TODO: Add more functionality
 }

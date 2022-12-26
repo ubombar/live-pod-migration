@@ -114,6 +114,9 @@ type MigrationJob struct {
 	// Migration status describes in which stage migration is
 	Status MigrationStatus
 
+	// This represents the failure reason
+	Error error
+
 	// Shows if the container is running
 	Running bool
 

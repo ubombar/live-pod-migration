@@ -39,16 +39,27 @@ func (c *dockerClient) Version() string {
 }
 
 // Get container info
-func (c *dockerClient) GetContainerInfo(containerId string) (*ContainerInfo, error) {
-	con, err := c.cli.ContainerInspect(context.Background(), containerId)
+func (c *dockerClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
+	con, err := c.cli.ContainerInspect(context.Background(), cid)
 
 	if err != nil {
 		return nil, err
 	}
 
+	var containerId string
+	var imageid string
+
+	if strings.Contains(con.ID, ":") {
+		containerId = strings.Split(con.ID, ":")[1]
+	}
+
+	if strings.Contains(con.Image, ":") {
+		imageid = strings.Split(con.Image, ":")[1]
+	}
+
 	info := &ContainerInfo{
-		ContainerId:    strings.Split(con.ID, ":")[1],
-		ImageId:        strings.Split(con.Image, ":")[1],
+		ContainerId:    containerId,
+		ImageId:        imageid,
 		ContainerNames: []string{con.Name},
 	}
 
