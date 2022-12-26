@@ -1,12 +1,11 @@
 package daemon
 
 import (
+	"errors"
+
 	"github.com/sirupsen/logrus"
 )
 
-// This handle check the following conditions to allow the migration to happen.
-// * There should be a container with the following container id
-// * There should not be any active migration with the same client container
 func (d *daemon) incomingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -15,21 +14,48 @@ func (d *daemon) incomingCallback(migrationid string) error {
 		return err
 	}
 
-	// Client
+	//
 	if *role == MigrationRoleClient {
-		// // Get the container with the container id
-		// _, err = d.GetDefaultContainerClient().GetContainerInfo(job.ClientContainerID)
+		// Check if container is active
+		containerInfo, err := d.GetDefaultContainerClient().GetContainerInfo(job.ClientContainerID)
 
-		// if err != nil {
-		// 	return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
-		// }
+		if err != nil {
+			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
+		}
+
+		// Container should be running
+		if !containerInfo.Running {
+			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container is not running"), *role)
+		}
+
+		// Get all of the migrations
+		duplicated := d.GetJobStore().Find(func(name string, obj interface{}) bool {
+			otherJob, ok := obj.(MigrationJob)
+
+			if !ok {
+				return false
+			}
+
+			if name == migrationid {
+				return false
+			}
+
+			return otherJob.ClientContainerID == job.ClientContainerID
+		})
+
+		if duplicated {
+			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("there is already a migration job using the same container"), *role)
+		}
+	}
+
+	//
+	if *role == MigrationRoleServer {
 
 	}
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
-// Handle migration
 func (d *daemon) preparingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusPreparing, CheckpointingQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -43,7 +69,6 @@ func (d *daemon) preparingCallback(migrationid string) error {
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
-// Handle migration
 func (d *daemon) checkpointingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusCheckpointing, TransferingQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -57,7 +82,6 @@ func (d *daemon) checkpointingCallback(migrationid string) error {
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
-// Handle migration
 func (d *daemon) transferingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusTransfering, RestoringQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -71,7 +95,6 @@ func (d *daemon) transferingCallback(migrationid string) error {
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
-// Handle migration
 func (d *daemon) restoringCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusRestoring, DoneQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -85,7 +108,6 @@ func (d *daemon) restoringCallback(migrationid string) error {
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
 
-// Handle migration
 func (d *daemon) doneCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusDone, NullQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -108,7 +130,7 @@ func (d *daemon) errorCallback(migrationid string) error {
 		return err
 	}
 
-	logrus.Infoln("Migration", job.MigrationId, "finnished with error")
+	logrus.Infoln("Migration", job.MigrationId, "finnished with error:", job.Error.Error())
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }

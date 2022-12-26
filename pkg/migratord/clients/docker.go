@@ -61,6 +61,7 @@ func (c *dockerClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
 		ContainerId:    containerId,
 		ImageId:        imageid,
 		ContainerNames: []string{con.Name},
+		Running:        con.State.Running,
 	}
 
 	return info, nil

@@ -10,6 +10,7 @@ type Store interface {
 	Fetch(name string) (interface{}, error)
 	Name() string
 	Delete(name string) error
+	Find(func(name string, obj interface{}) bool) bool
 }
 
 type store struct {
@@ -66,4 +67,14 @@ func (m *store) Delete(name string) error {
 	delete(m.store, name)
 
 	return nil
+}
+
+func (m *store) Find(f func(name string, obj interface{}) bool) bool {
+	for name, value := range m.store {
+		if f(name, value) {
+			return true
+		}
+	}
+
+	return false
 }

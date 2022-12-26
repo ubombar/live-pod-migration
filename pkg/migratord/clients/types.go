@@ -8,7 +8,7 @@ type ContainerInfo struct {
 	ContainerId    string
 	ImageId        string
 	ContainerNames []string
-
+	Running        bool
 	// Other stuff for storage and networking
 }
 
