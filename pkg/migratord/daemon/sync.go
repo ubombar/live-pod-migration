@@ -52,12 +52,6 @@ type Syncer interface {
 	// Register the migration if with requested attributes. current status and the next job queue.
 	RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) error
 
-	// Changes the jobs nextqueue
-	ChangeNextQueue(migrationid string, nextQueueName string) error
-
-	// Changes the jobs nextqueue with error
-	ChangeToErrorQueue(migrationid string, err error) error
-
 	// Indicates the job has finnished. If the peer still processing it will not add the migration
 	// to the next queue until peer finishes.
 	FinishJob(migrationid string, role MigrationRole) error
@@ -216,7 +210,7 @@ func (s *syncer) FinishJobWithError(migrationid string, jobError error, role Mig
 		return errors.New("sync store did not get a sync object")
 	}
 
-	// Set the next queue to error queue
+	// Set the next queue to error queue, if it is not null queue.
 	if syncObj.NextQueueName != NullQueue {
 		syncObj.NextQueueName = ErrorQueue
 	}

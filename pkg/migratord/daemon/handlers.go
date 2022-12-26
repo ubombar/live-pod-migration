@@ -1,15 +1,12 @@
 package daemon
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/sirupsen/logrus"
 )
 
 // This handle check the following conditions to allow the migration to happen.
 // * There should be a container with the following container id
-// *
+// * There should not be any active migration with the same client container
 func (d *daemon) incomingCallback(migrationid string) error {
 	d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
 	job, role, err := d.getMigrationObjects(migrationid)
@@ -18,20 +15,15 @@ func (d *daemon) incomingCallback(migrationid string) error {
 		return err
 	}
 
-	// Get the container with the container id
-	_, err = d.GetDefaultContainerClient().GetContainerInfo(job.ClientContainerID)
-
-	if err != nil {
-		d.GetSyncer().ChangeNextQueue(migrationid, ErrorQueue)
-		return err
-	}
-
-	// Iterate over the known migration jobs
-	// Assume we got an error here from client
-
-	// Client sends an error
+	// Client
 	if *role == MigrationRoleClient {
-		return d.GetSyncer().FinishJobWithError(migrationid, errors.New("my error"), *role)
+		// // Get the container with the container id
+		// _, err = d.GetDefaultContainerClient().GetContainerInfo(job.ClientContainerID)
+
+		// if err != nil {
+		// 	return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
+		// }
+
 	}
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
@@ -117,8 +109,6 @@ func (d *daemon) errorCallback(migrationid string) error {
 	}
 
 	logrus.Infoln("Migration", job.MigrationId, "finnished with error")
-
-	fmt.Printf("job: %v\n", job.Error.Error())
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
