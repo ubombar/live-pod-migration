@@ -15,7 +15,7 @@ type Client interface {
 
 	// Checkpointing functions (demo specific)
 	InspectContainer(containerId string) (*ContainerInspectResult, error)
-	CheckpointContainer(containerId string, migrationId string) error
+	CheckpointContainer(containerId string, checkpointPath string) error
 	RestoreContainer(checkpointArchive string, randomizeName bool) (*ContainerInspectResult, error)
 	ClearContainer(containerId string)
 }

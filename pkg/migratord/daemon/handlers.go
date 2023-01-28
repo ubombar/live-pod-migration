@@ -1,6 +1,10 @@
 package daemon
 
 import (
+	"errors"
+	"fmt"
+	"os"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -12,15 +16,25 @@ func (d *daemon) incomingCallback(migrationid string) error {
 		return err
 	}
 
-	//
+	// CLIENT
 	if *role == MigrationRoleClient {
+		ins, err := d.GetDefaultContainerClient().InspectContainer(job.ClientContainerID)
 
+		if err != nil || !ins.State.Running {
+			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container is not running"), *role)
+		}
 	}
 
-	//
+	// SERVER
 	if *role == MigrationRoleServer {
+		_, err = d.GetDefaultContainerClient().InspectContainer(job.ClientContainerID)
 
+		if err == nil {
+			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container exsists in server node"), *role)
+		}
 	}
+
+	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
 }
@@ -46,6 +60,15 @@ func (d *daemon) checkpointingCallback(migrationid string) error {
 		return err
 	}
 
+	if *role == MigrationRoleClient {
+		checkpointPath := fmt.Sprint("/tmp/", job.MigrationId, ".tar.gz")
+		err := d.GetDefaultContainerClient().CheckpointContainer(job.ClientContainerID, checkpointPath)
+
+		if err != nil {
+			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
+		}
+	}
+
 	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
@@ -58,6 +81,8 @@ func (d *daemon) transferingCallback(migrationid string) error {
 	if err != nil {
 		return err
 	}
+
+	// SCP HERE
 
 	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
@@ -72,6 +97,15 @@ func (d *daemon) restoringCallback(migrationid string) error {
 		return err
 	}
 
+	if *role == MigrationRoleServer {
+		checkpointPath := fmt.Sprint("/tmp/", job.MigrationId, ".tar.gz")
+		_, err := d.GetDefaultContainerClient().RestoreContainer(checkpointPath, true)
+
+		if err != nil {
+			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
+		}
+	}
+
 	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	return d.GetSyncer().FinishJob(migrationid, *role)
@@ -84,6 +118,9 @@ func (d *daemon) doneCallback(migrationid string) error {
 	if err != nil {
 		return err
 	}
+
+	checkpointPath := fmt.Sprint("/tmp/", job.MigrationId, ".tar.gz")
+	os.Remove(checkpointPath)
 
 	logrus.Infoln("Migration", job.MigrationId, "finnished successfully")
 
