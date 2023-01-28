@@ -1,6 +1,53 @@
 # Live Pod Migration
 
-## How to Test?
+## Demo in Command Line
+
+To create a simple stateful container, the following command can be used. 
+
+
+```bash
+sudo podman run -dt --name looper busybox /bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done'
+```
+<!-- sudo podman logs -l -->
+
+The checkpoint the pod using this command.
+
+```bash
+sudo podman container checkpoint -l --export=/tmp/checkpoint.tar.gz
+```
+
+<!-- scp /tmp/chkpt.tar.gz <destination-host>:/tmp -->
+
+Then restore the command.
+
+```bash
+sudo podman container restore --import=/tmp/checkpoint.tar.gz
+```
+
+## Demo of Migratord and Migctl
+
+Run the migratord as root. Then use migctl to create a migration.
+
+```bash
+migctl job --server-address 192.168.122.10 --client-address 192.168.122.11 looper
+```
+
+
+
+<!-- ```bash -->
+
+<!-- # docker run -id --name test centos /bin/sh 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done' -->
+
+
+<!-- # docker run --security-opt=seccomp:unconfined --name cr -d ubuntu /bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done' -->
+<!-- ``` -->
+
+<!-- Normally a checkpoint can be created via the command `docker checkpoint create cr cr-checkpoint`. -->
+
+
+<!-- 'docker start --checkpoint cr-checkpoint cr' -->
+
+<!-- ## How to Test?
 
 You can use `./hack/build` script to build both of the `migratord` daemon and `migctl` utility. 
 
@@ -43,7 +90,7 @@ This command will create a migration job and invoke the migratord. You can watch
 
 ```bash
     watch -n 1 migctl get --address-client $( minikube ip -p mentor -n mentor ) --address-server $( minikube ip -p mentor -n mentor-m02 ) --port-client 4545 --port-server 4545 migration_id
-```
+``` -->
 
 ## What's Next?
 
