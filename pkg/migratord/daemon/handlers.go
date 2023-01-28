@@ -1,8 +1,6 @@
 package daemon
 
 import (
-	"errors"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,36 +14,7 @@ func (d *daemon) incomingCallback(migrationid string) error {
 
 	//
 	if *role == MigrationRoleClient {
-		// Check if container is active
-		containerInfo, err := d.GetDefaultContainerClient().GetContainerInfo(job.ClientContainerID)
 
-		if err != nil {
-			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
-		}
-
-		// Container should be running
-		if !containerInfo.Running {
-			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container is not running"), *role)
-		}
-
-		// Get all of the migrations
-		duplicated := d.GetJobStore().Find(func(name string, obj interface{}) bool {
-			otherJob, ok := obj.(MigrationJob)
-
-			if !ok {
-				return false
-			}
-
-			if name == migrationid {
-				return false
-			}
-
-			return otherJob.ClientContainerID == job.ClientContainerID
-		})
-
-		if duplicated {
-			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("there is already a migration job using the same container"), *role)
-		}
 	}
 
 	//

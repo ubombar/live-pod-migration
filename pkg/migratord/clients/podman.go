@@ -1,73 +1,125 @@
 package clients
 
 import (
-	"context"
+	"encoding/json"
+	"errors"
+	"math/rand"
+	"os"
+	"os/exec"
 	"strings"
-
-	"github.com/docker/docker/client"
-	"github.com/sirupsen/logrus"
 )
 
 type podmanClient struct {
 	Client
-	cli *client.Client
+	containerSocket string
 }
 
 func NewPodmanClient() *podmanClient {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
-
-	if err != nil {
-		logrus.Errorln("cannot connect to docker: ", err)
-		return nil
+	c := &podmanClient{
+		containerSocket: "/run/podman/podman.sock",
 	}
 
-	c := &podmanClient{
-		cli: cli,
+	if _, err := os.Stat(c.containerSocket); os.IsNotExist(err) {
+		return nil
 	}
 
 	return c
 }
 
-// Get runtime eg 'docker'
+// Get runtime eg 'podman'
 func (c *podmanClient) Runtime() string {
 	return ClientPodman
 }
 
 // Get version of the runtime
 func (c *podmanClient) Version() string {
-	return c.cli.ClientVersion()
+	cmd := exec.Command("podman", "--version")
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		return "unknown"
+	}
+
+	splitted := strings.Split(string(stdout), " ")
+
+	if len(splitted) != 3 {
+		return "unknown"
+	}
+
+	return splitted[2][:len(splitted[2])-1]
 }
 
-// Get container info
-func (c *podmanClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
-	con, err := c.cli.ContainerInspect(context.Background(), cid)
+func (c *podmanClient) InspectContainer(containerId string) (*ContainerInspectResult, error) {
+	cmd := exec.Command("podman", "container", "inspect", containerId)
+	output, err := cmd.Output()
 
 	if err != nil {
 		return nil, err
 	}
 
-	var containerId string
-	var imageid string
+	containerObject := []ContainerInspectResult{}
+	err = json.Unmarshal(output, &containerObject)
 
-	if strings.Contains(con.ID, ":") {
-		containerId = strings.Split(con.ID, ":")[1]
+	if err != nil {
+		return nil, errors.New("container does not exists")
 	}
 
-	if strings.Contains(con.Image, ":") {
-		imageid = strings.Split(con.Image, ":")[1]
-	}
-
-	info := &ContainerInfo{
-		ContainerId:    containerId,
-		ImageId:        imageid,
-		ContainerNames: []string{con.Name},
-		Running:        con.State.Running,
-	}
-
-	return info, nil
+	return &containerObject[0], nil
 }
 
-// Get checkpoint info
-func (c *podmanClient) GetCheckpointInfo(checkpointid string) (*CheckpointInfo, error) {
-	return nil, nil
+func (c *podmanClient) CheckpointContainer(containerId string, checkpointPath string) error {
+	cmd := exec.Command("podman", "container", "checkpoint", "--export", checkpointPath, containerId)
+	output, err := cmd.Output()
+
+	if err != nil {
+		return err
+	}
+
+	outputString := string(output)
+
+	if strings.Contains(outputString, "Error: ") {
+		return errors.New(outputString)
+	}
+
+	return nil
+}
+
+func (c *podmanClient) RestoreContainer(checkpointPath string, randomizeName bool) (*ContainerInspectResult, error) {
+	var cmd *exec.Cmd
+	randomName := randomString(16)
+
+	if randomizeName {
+		cmd = exec.Command("podman", "container", "restore", "--import", checkpointPath, "--name", randomName)
+	} else {
+		cmd = exec.Command("podman", "container", "restore", "--import", checkpointPath)
+	}
+	output, err := cmd.Output()
+
+	if err != nil {
+		return nil, errors.New("cannot connect to podman")
+	}
+
+	outputString := string(output)
+
+	if strings.Contains(outputString, "Error: ") {
+		return nil, errors.New(outputString)
+	}
+
+	result, err := c.InspectContainer(randomName)
+
+	return result, err
+}
+
+func (c *podmanClient) ClearContainer(containerId string) {
+
+}
+
+func randomString(n int) string {
+	var letters = []rune("0123456789abcdef")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
 }

@@ -12,24 +12,24 @@ sudo podman run -dt --name looper busybox /bin/sh -c 'i=0; while true; do echo $
 
 The checkpoint the pod using this command.
 
-```bash
+<!-- ```bash
 sudo podman container checkpoint -l --export=/tmp/checkpoint.tar.gz
-```
+``` -->
 
 <!-- scp /tmp/chkpt.tar.gz <destination-host>:/tmp -->
 
 Then restore the command.
 
-```bash
+<!-- ```bash
 sudo podman container restore --import=/tmp/checkpoint.tar.gz
-```
+``` -->
 
 ## Demo of Migratord and Migctl
 
 Run the migratord as root. Then use migctl to create a migration.
 
 ```bash
-migctl job --server-address 192.168.122.10 --client-address 192.168.122.11 looper
+migctl job --server-address 192.168.122.19--client-address 192.168.122.92 looper
 ```
 
 
