@@ -8,12 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type dockerClient struct {
+type podmanClient struct {
 	Client
 	cli *client.Client
 }
 
-func NewDockerClient() *dockerClient {
+func NewPodmanClient() *podmanClient {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 
 	if err != nil {
@@ -21,7 +21,7 @@ func NewDockerClient() *dockerClient {
 		return nil
 	}
 
-	c := &dockerClient{
+	c := &podmanClient{
 		cli: cli,
 	}
 
@@ -29,17 +29,17 @@ func NewDockerClient() *dockerClient {
 }
 
 // Get runtime eg 'docker'
-func (c *dockerClient) Runtime() string {
-	return ClientDocker
+func (c *podmanClient) Runtime() string {
+	return ClientPodman
 }
 
 // Get version of the runtime
-func (c *dockerClient) Version() string {
+func (c *podmanClient) Version() string {
 	return c.cli.ClientVersion()
 }
 
 // Get container info
-func (c *dockerClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
+func (c *podmanClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
 	con, err := c.cli.ContainerInspect(context.Background(), cid)
 
 	if err != nil {
@@ -68,6 +68,6 @@ func (c *dockerClient) GetContainerInfo(cid string) (*ContainerInfo, error) {
 }
 
 // Get checkpoint info
-func (c *dockerClient) GetCheckpointInfo(checkpointid string) (*CheckpointInfo, error) {
+func (c *podmanClient) GetCheckpointInfo(checkpointid string) (*CheckpointInfo, error) {
 	return nil, nil
 }

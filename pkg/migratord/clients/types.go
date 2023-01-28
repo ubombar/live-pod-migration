@@ -1,7 +1,7 @@
 package clients
 
 const (
-	ClientDocker = "docker"
+	ClientPodman = "podman"
 )
 
 type ContainerInfo struct {

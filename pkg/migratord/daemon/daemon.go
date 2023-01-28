@@ -81,7 +81,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 
 	// Set client
 	d.client = map[string]clients.Client{
-		clients.ClientDocker: clients.NewDockerClient(),
+		clients.ClientPodman: clients.NewPodmanClient(),
 	}
 
 	return d
@@ -153,7 +153,7 @@ func (d *daemon) GetContainerClient(name string) clients.Client {
 }
 
 func (d *daemon) GetDefaultContainerClient() clients.Client {
-	return d.GetContainerClient(clients.ClientDocker)
+	return d.GetContainerClient(clients.ClientPodman)
 }
 
 func (d *daemon) GetRPC() RPC {
