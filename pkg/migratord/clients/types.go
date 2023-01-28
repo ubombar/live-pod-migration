@@ -18,6 +18,7 @@ type Client interface {
 	CheckpointContainer(containerId string, checkpointPath string) error
 	RestoreContainer(checkpointArchive string, randomizeName bool) (*ContainerInspectResult, error)
 	ClearContainer(containerId string)
+	TransferCheckpoint(checkpointPath string, serverAddress string) error
 }
 
 type ContainerInspectResult struct {

@@ -82,7 +82,14 @@ func (d *daemon) transferingCallback(migrationid string) error {
 		return err
 	}
 
-	// SCP HERE
+	if *role == MigrationRoleClient {
+		checkpointPath := fmt.Sprint("/tmp/", job.MigrationId, ".tar.gz")
+		err = d.GetDefaultContainerClient().TransferCheckpoint(checkpointPath, job.ServerIP)
+
+		if err != nil {
+			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)
+		}
+	}
 
 	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 

@@ -3,6 +3,7 @@ package clients
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -112,6 +113,18 @@ func (c *podmanClient) RestoreContainer(checkpointPath string, randomizeName boo
 
 func (c *podmanClient) ClearContainer(containerId string) {
 
+}
+
+func (c *podmanClient) TransferCheckpoint(checkpointPath string, serverAddress string) error {
+	cmd := exec.Command("scp", checkpointPath, fmt.Sprint(serverAddress, ":", checkpointPath))
+
+	_, err := cmd.Output()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func randomString(n int) string {
