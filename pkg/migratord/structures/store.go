@@ -11,6 +11,7 @@ type Store interface {
 	Name() string
 	Delete(name string) error
 	Find(func(name string, obj interface{}) bool) bool
+	Keys() []string
 }
 
 type store struct {
@@ -77,4 +78,17 @@ func (m *store) Find(f func(name string, obj interface{}) bool) bool {
 	}
 
 	return false
+}
+
+func (m *store) Keys() []string {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	keys := []string{}
+
+	for k, _ := range m.store {
+		keys = append(keys, k)
+	}
+
+	return keys
 }

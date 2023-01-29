@@ -186,7 +186,9 @@ func (s *syncer) FinishJob(migrationid string, role MigrationRole) error {
 				return errors.New("job store does not contain a migration job")
 			}
 
-			jobObj.Status = StatusDone
+			if jobObj.Error == nil {
+				jobObj.Status = StatusDone
+			}
 
 			s.d.GetJobStore().Add(migrationid, jobObj)
 		}
@@ -231,6 +233,7 @@ func (s *syncer) FinishJobWithError(migrationid string, jobError error, role Mig
 	}
 
 	jobObj.Error = jobError
+	jobObj.Status = StatusError
 
 	// Update the job object
 	s.d.GetJobStore().Add(migrationid, jobObj)

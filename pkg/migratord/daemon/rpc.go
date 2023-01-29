@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -184,6 +185,63 @@ func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequ
 	}
 
 	return &pb.SyncNotificationResponse{}, nil
+}
+
+func (r *rpc) GetMigrationJob(ctx context.Context, req *pb.GetMigrationJobRequest) (*pb.GetMigrationJobResponse, error) {
+	jobs := []*pb.MigrationJob{}
+
+	keys := r.d.GetJobStore().Keys()
+
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		obj, err := r.d.GetJobStore().Fetch(key)
+
+		if err != nil {
+			continue
+		}
+
+		job, ok := obj.(MigrationJob)
+
+		if !ok {
+			continue
+		}
+
+		obj, err = r.d.GetRoleStore().Fetch(key)
+
+		if err != nil {
+			continue
+		}
+
+		role, ok := obj.(MigrationRole)
+
+		if !ok {
+			continue
+		}
+
+		errorString := ""
+
+		if job.Error != nil {
+			errorString = job.Error.Error()
+		}
+
+		jobs = append(jobs, &pb.MigrationJob{
+			MigrationId:     job.MigrationId,
+			ClientAddress:   job.ClientIP,
+			ServerAddress:   job.ServerIP,
+			ClientPort:      int32(job.ClientPort),
+			ServerPort:      int32(job.ServerPort),
+			CotninerId:      job.ClientContainerID,
+			MigrationStatus: string(job.Status),
+			ErrorString:     errorString,
+			Running:         job.Running,
+			CreationDate:    strings.Split(job.CreationDate.String(), "+")[0],
+			Role:            string(role),
+			MigrationMethod: string(job.Method),
+		})
+	}
+
+	return &pb.GetMigrationJobResponse{Jobs: jobs}, nil
 }
 
 func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole, jobError error) error {
