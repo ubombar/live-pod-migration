@@ -26,13 +26,13 @@ func (d *daemon) incomingCallback(migrationid string) error {
 	}
 
 	// SERVER
-	if *role == MigrationRoleServer {
-		_, err = d.GetDefaultContainerClient().InspectContainer(job.ClientContainerID)
+	// if *role == MigrationRoleServer {
+	// 	_, err = d.GetDefaultContainerClient().InspectContainer(job.ClientContainerID)
 
-		if err == nil {
-			return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container exsists in server node"), *role)
-		}
-	}
+	// 	if err == nil {
+	// 		return d.GetSyncer().FinishJobWithError(migrationid, errors.New("container exsists in server node"), *role)
+	// 	}
+	// }
 
 	logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
@@ -84,7 +84,7 @@ func (d *daemon) transferingCallback(migrationid string) error {
 
 	if *role == MigrationRoleClient {
 		checkpointPath := fmt.Sprint("/tmp/", job.MigrationId, ".tar.gz")
-		err = d.GetDefaultContainerClient().TransferCheckpoint(checkpointPath, job.ServerIP)
+		err = d.GetDefaultContainerClient().TransferCheckpoint(checkpointPath, job.ServerIP, job.Username)
 
 		if err != nil {
 			return d.GetSyncer().FinishJobWithError(migrationid, err, *role)

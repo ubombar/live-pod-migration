@@ -82,6 +82,20 @@ func (c *podmanClient) CheckpointContainer(containerId string, checkpointPath st
 		return errors.New(outputString)
 	}
 
+	cmd2 := exec.Command("chmod", "777", checkpointPath)
+
+	output2, err := cmd2.Output()
+
+	if err != nil {
+		return err
+	}
+
+	outputString2 := string(output2)
+
+	if strings.Contains(outputString2, "Error: ") {
+		return errors.New(outputString2)
+	}
+
 	return nil
 }
 
@@ -115,8 +129,8 @@ func (c *podmanClient) ClearContainer(containerId string) {
 
 }
 
-func (c *podmanClient) TransferCheckpoint(checkpointPath string, serverAddress string) error {
-	cmd := exec.Command("scp", checkpointPath, fmt.Sprint(serverAddress, ":", checkpointPath))
+func (c *podmanClient) TransferCheckpoint(checkpointPath string, serverAddress string, username string) error {
+	cmd := exec.Command("sudo", "-u", username, "scp", checkpointPath, fmt.Sprint(username, "@", serverAddress, ":", checkpointPath))
 
 	_, err := cmd.Output()
 
