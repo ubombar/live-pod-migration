@@ -10,6 +10,19 @@ service MigratorService {
     rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
 
     rpc GetMigrationJob (GetMigrationJobRequest) returns (GetMigrationJobResponse);
+
+    rpc InformStateChange (InformStateChangeRequest) returns (InformStateChangeResponse);
+}
+
+message InformStateChangeRequest {
+    string migration_id = 1;
+    string finished_state = 2;
+    string next_state = 3;
+    optional string error_string = 4;
+}
+
+message InformStateChangeResponse {
+    
 }
 
 enum Source {
@@ -51,10 +64,14 @@ message ShareMigrationJobResponse {
 
 message SyncNotificationRequest {
     string migration_id = 1;
-    string state_finished = 2;
     
-    string error_message = 3;
-    bool finished_successful = 4;
+    string state_finished = 2;
+    string state_next = 3;
+    
+    string error_message = 4;
+    bool finished_successful = 5;
+    
+    string migration_role = 6;
 }
 
 message SyncNotificationResponse {

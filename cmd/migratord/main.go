@@ -13,7 +13,7 @@ func main() {
 
 	// TODO: Add a way to add docker client information
 	flag.StringVar(&address, "address", "localhost", "Specifies the node address which the migratord is running.")
-	flag.IntVar(&port, "port", 4545, "Specifies the port which the migratord is listening.")
+	flag.IntVar(&port, "port", 9213, "Specifies the port which the migratord is listening.")
 	flag.Parse()
 
 	logrus.Infof("Starting migratord on address %s and port %d\n", address, port)

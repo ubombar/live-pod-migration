@@ -54,6 +54,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		RestoringQueue:     structures.NewQueue(RestoringQueue, config.QueueSize),
 		DoneQueue:          structures.NewQueue(DoneQueue, config.QueueSize),
 		ErrorQueue:         structures.NewQueue(ErrorQueue, config.QueueSize),
+		SyncQueue:          structures.NewQueue(SyncQueue, config.QueueSize),
 	}
 
 	// Set the store
@@ -69,6 +70,7 @@ func NewDaemon(config *DaemonConfig) *daemon {
 		RestoringConsumer:     consumers.NewConsumer(d.GetQueue(RestoringQueue), d.restoringCallback),
 		DoneConsumer:          consumers.NewConsumer(d.GetQueue(DoneQueue), d.doneCallback),
 		ErrorConsumer:         consumers.NewConsumer(d.GetQueue(ErrorQueue), d.errorCallback),
+		SyncConsumer:          consumers.NewConsumer(d.GetQueue(SyncQueue), d.syncCallback),
 	}
 
 	d.syncer = NewSyncer(d)
@@ -164,30 +166,70 @@ func (d *daemon) GetConfig() DaemonConfig {
 	return *d.config
 }
 
-func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *MigrationRole, error) {
-	obj, err := d.GetRoleStore().Fetch(migrationid)
+// func (d *daemon) getMigrationObjects(migrationid string) (*MigrationJob, *MigrationRole, error) {
+// 	obj, err := d.GetRoleStore().Fetch(migrationid)
+
+// 	if err != nil {
+// 		return nil, nil, errors.New("cannot get role of migrationid")
+// 	}
+
+// 	role, ok := obj.(MigrationRole)
+
+// 	if !ok {
+// 		return nil, nil, errors.New("migration store does not contain role")
+// 	}
+
+// 	obj, err = d.GetJobStore().Fetch(migrationid)
+
+// 	if err != nil {
+// 		return nil, nil, errors.New("cannot get job of migrationid")
+// 	}
+
+// 	job, ok := obj.(MigrationJob)
+
+// 	if !ok {
+// 		return nil, nil, errors.New("migration store does not contain job")
+// 	}
+
+// 	return &job, &role, nil
+// }
+
+func FromMigrationId(migrationid string, daemon Daemon) (*MigrationJob, *MigrationRole, *Sync, error) {
+	obj, err := daemon.GetSyncer().GetSyncStore().Fetch(migrationid)
 
 	if err != nil {
-		return nil, nil, errors.New("cannot get role of migrationid")
+		return nil, nil, nil, errors.New("cannot get sync of migrationid")
+	}
+
+	sync, ok := obj.(Sync)
+
+	if !ok {
+		return nil, nil, nil, errors.New("sync store does not contain sync")
+	}
+
+	obj, err = daemon.GetRoleStore().Fetch(migrationid)
+
+	if err != nil {
+		return nil, nil, nil, errors.New("cannot get role of migrationid")
 	}
 
 	role, ok := obj.(MigrationRole)
 
 	if !ok {
-		return nil, nil, errors.New("migration store does not contain role")
+		return nil, nil, nil, errors.New("migration store does not contain role")
 	}
 
-	obj, err = d.GetJobStore().Fetch(migrationid)
+	obj, err = daemon.GetJobStore().Fetch(migrationid)
 
 	if err != nil {
-		return nil, nil, errors.New("cannot get job of migrationid")
+		return nil, nil, nil, errors.New("cannot get job of migrationid")
 	}
 
 	job, ok := obj.(MigrationJob)
 
 	if !ok {
-		return nil, nil, errors.New("migration store does not contain job")
+		return nil, nil, nil, errors.New("migration store does not contain job")
 	}
 
-	return &job, &role, nil
+	return &job, &role, &sync, nil
 }

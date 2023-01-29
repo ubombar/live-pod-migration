@@ -61,8 +61,8 @@ var jobCmd = &cobra.Command{
 }
 
 func init() {
-	jobCmd.Flags().IntVar(&portClient, "port-client", 4545, "Client's port")
-	jobCmd.Flags().IntVar(&portServer, "port-server", 4545, "Server's port")
+	jobCmd.Flags().IntVar(&portClient, "port-client", 9213, "Client's port")
+	jobCmd.Flags().IntVar(&portServer, "port-server", 9213, "Server's port")
 
 	jobCmd.Flags().StringVar(&serverPrivateKeyPath, "key", "~/.ssh/id_rsa", "id_rsa file of the server migratord.")
 	jobCmd.Flags().StringVar(&serverUser, "user", "docker", "server's user for ssh connection.")

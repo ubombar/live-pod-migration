@@ -68,6 +68,6 @@ var jobsCmd = &cobra.Command{
 }
 
 func init() {
-	jobsCmd.Flags().IntVar(&nodePort, "port", 4545, "Port of the node we want to list migrations.")
+	jobsCmd.Flags().IntVar(&nodePort, "port", 9213, "Port of the node we want to list migrations.")
 	rootCmd.AddCommand(jobsCmd)
 }

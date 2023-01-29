@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,7 @@ const (
 	RestoringConsumer     = "restoring-consumer"
 	DoneConsumer          = "done-consumer"
 	ErrorConsumer         = "error-consumer"
+	SyncConsumer          = "sync-consumer"
 )
 
 const (
@@ -23,6 +25,7 @@ const (
 	RestoringQueue     = "restoring-queue"
 	DoneQueue          = "done-queue"
 	ErrorQueue         = "error-queue"
+	SyncQueue          = "sync-queue"
 	NullQueue          = ""
 )
 
@@ -49,6 +52,10 @@ func (r MigrationRole) PeersRole() MigrationRole {
 
 type MigrationStatus string
 
+func (m MigrationStatus) ToQueueName() string {
+	return fmt.Sprint("%v-queue", strings.Split(string(m), "-")[1])
+}
+
 const (
 	StatusIncoming      MigrationStatus = "status-incoming"
 	StatusPreparing     MigrationStatus = "status-preparing"
@@ -57,7 +64,6 @@ const (
 	StatusRestoring     MigrationStatus = "status-restoring"
 	StatusDone          MigrationStatus = "status-done"
 	StatusError         MigrationStatus = "status-error"
-	StatusSyncing       MigrationStatus = "syncing-error"
 )
 
 type MigrationMethod string
@@ -78,7 +84,7 @@ type DaemonConfig struct {
 func DefaultDaemonConfigs() DaemonConfig {
 	return DaemonConfig{
 		SelfAddress:         "localhost",
-		SelfPort:            4545,
+		SelfPort:            9213,
 		QueueSize:           64,
 		CheckpointDirectory: DefaultCheckpointDirectory,
 	}
@@ -87,7 +93,7 @@ func DefaultDaemonConfigs() DaemonConfig {
 func DefaultDaemonConfigsWithAddress(ipaddress string) DaemonConfig {
 	return DaemonConfig{
 		SelfAddress:         ipaddress,
-		SelfPort:            4545,
+		SelfPort:            9213,
 		QueueSize:           64,
 		CheckpointDirectory: DefaultCheckpointDirectory,
 	}

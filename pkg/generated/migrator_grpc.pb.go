@@ -26,6 +26,7 @@ type MigratorServiceClient interface {
 	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
 	SyncNotification(ctx context.Context, in *SyncNotificationRequest, opts ...grpc.CallOption) (*SyncNotificationResponse, error)
 	GetMigrationJob(ctx context.Context, in *GetMigrationJobRequest, opts ...grpc.CallOption) (*GetMigrationJobResponse, error)
+	InformStateChange(ctx context.Context, in *InformStateChangeRequest, opts ...grpc.CallOption) (*InformStateChangeResponse, error)
 }
 
 type migratorServiceClient struct {
@@ -72,6 +73,15 @@ func (c *migratorServiceClient) GetMigrationJob(ctx context.Context, in *GetMigr
 	return out, nil
 }
 
+func (c *migratorServiceClient) InformStateChange(ctx context.Context, in *InformStateChangeRequest, opts ...grpc.CallOption) (*InformStateChangeResponse, error) {
+	out := new(InformStateChangeResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/InformStateChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MigratorServiceServer is the server API for MigratorService service.
 // All implementations must embed UnimplementedMigratorServiceServer
 // for forward compatibility
@@ -80,6 +90,7 @@ type MigratorServiceServer interface {
 	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
 	SyncNotification(context.Context, *SyncNotificationRequest) (*SyncNotificationResponse, error)
 	GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error)
+	InformStateChange(context.Context, *InformStateChangeRequest) (*InformStateChangeResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
 }
 
@@ -98,6 +109,9 @@ func (UnimplementedMigratorServiceServer) SyncNotification(context.Context, *Syn
 }
 func (UnimplementedMigratorServiceServer) GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMigrationJob not implemented")
+}
+func (UnimplementedMigratorServiceServer) InformStateChange(context.Context, *InformStateChangeRequest) (*InformStateChangeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InformStateChange not implemented")
 }
 func (UnimplementedMigratorServiceServer) mustEmbedUnimplementedMigratorServiceServer() {}
 
@@ -184,6 +198,24 @@ func _MigratorService_GetMigrationJob_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MigratorService_InformStateChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InformStateChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MigratorServiceServer).InformStateChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/MigratorService/InformStateChange",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MigratorServiceServer).InformStateChange(ctx, req.(*InformStateChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MigratorService_ServiceDesc is the grpc.ServiceDesc for MigratorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -206,6 +238,10 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMigrationJob",
 			Handler:    _MigratorService_GetMigrationJob_Handler,
+		},
+		{
+			MethodName: "InformStateChange",
+			Handler:    _MigratorService_InformStateChange_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

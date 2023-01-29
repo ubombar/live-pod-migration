@@ -32,7 +32,9 @@ func (r RPCPeer) String() string {
 
 type RPC interface {
 	Run() error
-	SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole, jobError error) error
+	// SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole, jobError error) error
+
+	NotifyPeerAboutStateChange(migrationid string, finnished MigrationStatus, next MigrationStatus, jobError error) error
 }
 
 type rpc struct {
@@ -68,6 +70,24 @@ func (r *rpc) Run() error {
 	return nil
 }
 
+func (r *rpc) InformStateChange(ctx context.Context, req *pb.InformStateChangeRequest) (*pb.InformStateChangeResponse, error) {
+	job, role, _, err := FromMigrationId(req.MigrationId, r.d)
+
+	if err != nil {
+		return nil, err
+	}
+
+	r.d.GetSyncer().GetSyncStore().AtomicUpdate(req.MigrationId, func(old interface{}, exists bool) (interface{}, bool) {
+		if !exists {
+			return nil, false
+		}
+
+		return nil, false
+	})
+
+	return nil, nil
+}
+
 func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error) {
 	peerReq := &pb.ShareMigrationJobRequest{
 		ContainerId:            req.ContainerId,
@@ -81,6 +101,8 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	}
 
 	conn, err := grpc.Dial(fmt.Sprintf("%v:%d", req.ServerAddress, req.ServerPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	// rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 192.168.122.1:4545: connect: connection refused"
 
 	if err != nil {
 		return nil, err
@@ -120,6 +142,8 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 
 	// Add the job to the queue
 	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
+
+	// time.Sleep(1000 * time.Second)
 
 	return &pb.CreateMigrationJobResponse{
 		MigrationId:     peerResp.MigrationId,
@@ -166,6 +190,9 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequest) (*pb.SyncNotificationResponse, error) {
 	// Get the migration role
 	obj, err := r.d.GetRoleStore().Fetch(req.MigrationId)
+
+	// logrus.Infoln("received! sync notification")
+	logrus.Info("Received SyncNotification\n")
 
 	if err != nil {
 		return nil, err
@@ -244,22 +271,14 @@ func (r *rpc) GetMigrationJob(ctx context.Context, req *pb.GetMigrationJobReques
 	return &pb.GetMigrationJobResponse{Jobs: jobs}, nil
 }
 
-func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole, jobError error) error {
-	obj, err := r.d.GetJobStore().Fetch(migrationid)
-
+func (r *rpc) NotifyPeerAboutStateChange(migrationid string, finnished MigrationStatus, next MigrationStatus, jobError error) error {
+	job, role, _, err := FromMigrationId(migrationid, r.d)
 	if err != nil {
 		return err
 	}
 
-	jobObj, ok := obj.(MigrationJob)
-
-	if !ok {
-		return errors.New("job store does not contain a job object")
-	}
-
-	address := jobObj.AddressString(peersRole)
-
-	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	peerAddress := job.AddressString(role.PeersRole())
+	conn, err := grpc.Dial(peerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		return err
@@ -267,23 +286,82 @@ func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationS
 
 	client := pb.NewMigratorServiceClient(conn)
 
-	errorMessage := ""
-	finishedSuccessful := jobError == nil
-
-	if !finishedSuccessful {
-		errorMessage = jobError.Error()
+	informStateChangeRequest := &pb.InformStateChangeRequest{
+		MigrationId:   migrationid,
+		FinishedState: string(finnished),
+		NextState:     string(next),
+		ErrorString:   nil,
 	}
 
-	_, err = client.SyncNotification(context.Background(), &pb.SyncNotificationRequest{
-		MigrationId:        migrationid,
-		StateFinished:      string(statusFinished),
-		ErrorMessage:       errorMessage,
-		FinishedSuccessful: finishedSuccessful,
-	})
+	if jobError != nil {
+		errorString := jobError.Error()
+		informStateChangeRequest.ErrorString = &errorString
+	}
+
+	_, err = client.InformStateChange(context.Background(), informStateChangeRequest)
 
 	if err != nil {
+		logrus.Error("error occured while informing peer for state change")
 		return err
 	}
 
 	return nil
 }
+
+// func (r *rpc) SendSyncNotification(migrationid string, statusFinished MigrationStatus, peersRole MigrationRole, jobError error) error {
+// 	obj, err := r.d.GetJobStore().Fetch(migrationid)
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	jobObj, ok := obj.(MigrationJob)
+
+// 	if !ok {
+// 		return errors.New("job store does not contain a job object")
+// 	}
+
+// 	address := jobObj.AddressString(peersRole)
+// 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	client := pb.NewMigratorServiceClient(conn)
+
+// 	errorMessage := ""
+// 	finishedSuccessful := jobError == nil
+
+// 	if !finishedSuccessful {
+// 		errorMessage = jobError.Error()
+// 	}
+
+// 	for i := 0; i < 5; i++ {
+// 		// logrus.Info("Sending SyncNotification\n")
+// 		_, err = client.SyncNotification(context.Background(), &pb.SyncNotificationRequest{
+// 			MigrationId:        migrationid,
+// 			StateFinished:      string(statusFinished),
+// 			ErrorMessage:       errorMessage,
+// 			FinishedSuccessful: finishedSuccessful,
+// 		})
+// 		// logrus.Info("Sent SyncNotification\n")
+
+// 		if err != nil {
+// 			logrus.Info("Error sending sync notification retrying\n")
+// 			time.Sleep(1 * time.Second)
+// 			continue
+// 		}
+
+// 		logrus.Info("Sent sync notification!")
+
+// 		break
+
+// 	}
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }

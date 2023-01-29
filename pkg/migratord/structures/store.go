@@ -12,6 +12,7 @@ type Store interface {
 	Delete(name string) error
 	Find(func(name string, obj interface{}) bool) bool
 	Keys() []string
+	AtomicUpdate(key string, operation func(old interface{}, exists bool) (interface{}, bool))
 }
 
 type store struct {
@@ -86,9 +87,21 @@ func (m *store) Keys() []string {
 
 	keys := []string{}
 
-	for k, _ := range m.store {
+	for k := range m.store {
 		keys = append(keys, k)
 	}
 
 	return keys
+}
+
+func (m *store) AtomicUpdate(key string, operation func(old interface{}, exists bool) (interface{}, bool)) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	value, exists := m.store[key]
+	newValue, update := operation(value, exists)
+
+	if update {
+		m.store[key] = newValue
+	}
 }
