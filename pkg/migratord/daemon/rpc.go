@@ -70,8 +70,9 @@ func (r *rpc) Run() error {
 	return nil
 }
 
+// Implementation of Inform State Change
 func (r *rpc) InformStateChange(ctx context.Context, req *pb.InformStateChangeRequest) (*pb.InformStateChangeResponse, error) {
-	job, role, _, err := FromMigrationId(req.MigrationId, r.d)
+	_, role, _, err := FromMigrationId(req.MigrationId, r.d)
 
 	if err != nil {
 		return nil, err
@@ -82,10 +83,26 @@ func (r *rpc) InformStateChange(ctx context.Context, req *pb.InformStateChangeRe
 			return nil, false
 		}
 
-		return nil, false
+		sync, ok := old.(Sync)
+
+		if !ok {
+			return nil, false
+		}
+
+		// If we are client, we are informed by server. thus set server as done
+		sync.SetRoleStateFininshed((*role).PeersRole())
+		sync.NextState = MigrationStatus(req.NextState)
+		sync.Error = nil
+
+		if req.ErrorString != nil {
+			sync.NextState = StatusError
+			sync.Error = errors.New(*req.ErrorString)
+		}
+
+		return sync, false
 	})
 
-	return nil, nil
+	return &pb.InformStateChangeResponse{}, nil
 }
 
 func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJobRequest) (*pb.CreateMigrationJobResponse, error) {

@@ -11,32 +11,45 @@ import (
 type Sync struct {
 	MigrationId string
 
-	// For client
-	ClientCurrent                MigrationStatus
-	ClientNext                   MigrationStatus
-	ClientStateCheckpointReached bool
-	ClientError                  error
-	ClientSuccessfull            bool
+	// // For client
+	// ClientCurrent                MigrationStatus
+	// ClientNext                   MigrationStatus
+	// ClientStateCheckpointReached bool
+	// ClientError                  error
+	// ClientSuccessfull            bool
 
-	// For server
-	ServerCurrent                MigrationStatus
-	ServerNext                   MigrationStatus
-	ServerStateCheckpointReached bool
-	ServerError                  error
-	ServerSuccessfull            bool
+	// // For server
+	// ServerCurrent                MigrationStatus
+	// ServerNext                   MigrationStatus
+	// ServerStateCheckpointReached bool
+	// ServerError                  error
+	// ServerSuccessfull            bool
+
+	ClientStateFinished bool
+	ServerStateFinished bool
+	NextState           MigrationStatus
+	Error               error
+}
+
+func (s *Sync) SetRoleStateFininshed(role MigrationRole) {
+	if role == MigrationRoleClient {
+		s.ClientStateFinished = true
+	} else {
+		s.ServerStateFinished = true
+	}
 }
 
 func (s *Sync) StateCheckpointReached() bool {
-	return s.ServerStateCheckpointReached && s.ClientStateCheckpointReached
+	return s.ClientStateFinished && s.ServerStateFinished
 }
 
 func (s *Sync) StateCheckpointReachedSuccessfully() bool {
-	return s.ServerSuccessfull && s.ClientSuccessfull && s.StateCheckpointReached()
+	return s.Error == nil && s.StateCheckpointReached()
 }
 
 func (s *Sync) GetNextState() MigrationStatus {
-	if s.ClientNext == s.ServerNext {
-		return s.ClientNext
+	if s.Error == nil {
+		return s.NextState
 	}
 
 	return StatusError
