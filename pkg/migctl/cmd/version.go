@@ -11,7 +11,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of migctl",
 	Long:  `All software has versions. This is migctl's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("migctl version v1alpha1 1.0")
+		fmt.Println("migctl version v1alpha1 1.01")
 	},
 }
 

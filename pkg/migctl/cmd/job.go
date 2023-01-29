@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	pb "github.com/ubombar/live-pod-migration/pkg/generated"
@@ -13,19 +12,23 @@ import (
 
 var serverPrivateKeyPath string
 var serverUser string
+var portClient int
+var portServer int
 
 var jobCmd = &cobra.Command{
-	Use:   "job [OPTIONS] [container_id]",
+	Use:   "job [OPTIONS] [source node address] [destination node address] [container name]",
 	Short: "Create a new migration job",
 	Long:  `Create a new migration job from the specitied plags.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			fmt.Println("migctl job requires one argument [container_id]")
+		if len(args) < 3 {
+			fmt.Println("migctl job requires arguments [source node address] [destination node address] and [container name]")
 			return
 		}
-		containerId := args[0]
+		sourceNodeAddress := args[0]
+		destinationNodeAddress := args[1]
+		containerName := args[2]
 
-		clientMigrator := fmt.Sprintf("%s:%d", rootConfig.addressClient, rootConfig.portClient)
+		clientMigrator := fmt.Sprintf("%s:%d", sourceNodeAddress, portClient)
 		conn, err := grpc.Dial(clientMigrator, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 		if err != nil {
@@ -33,23 +36,16 @@ var jobCmd = &cobra.Command{
 			return
 		}
 
-		privateKey, err := os.ReadFile(serverPrivateKeyPath)
-
-		if err != nil {
-			fmt.Println("Cannot load server's private key")
-			return
-		}
-
 		client := pb.NewMigratorServiceClient(conn)
 		defer conn.Close()
 
+		// Do not include servers private key
 		resp, err := client.CreateMigrationJob(context.Background(), &pb.CreateMigrationJobRequest{
-			ContainerId:            containerId,
-			ClientContainerRuntime: "docker",
-			ServerContainerRuntime: "docker",
-			ServerAddress:          rootConfig.addressServer,
-			ServerPort:             int32(rootConfig.portServer),
-			ServerKey:              string(privateKey),
+			ContainerId:            containerName,
+			ClientContainerRuntime: "podman",
+			ServerContainerRuntime: "podman",
+			ServerAddress:          destinationNodeAddress,
+			ServerPort:             int32(portServer),
 			ServerUser:             "ubombar",
 			Method:                 "Basic",
 		})
@@ -65,7 +61,11 @@ var jobCmd = &cobra.Command{
 }
 
 func init() {
+	jobCmd.Flags().IntVar(&portClient, "port-client", 4545, "Client's port")
+	jobCmd.Flags().IntVar(&portServer, "port-server", 4545, "Server's port")
+
 	jobCmd.Flags().StringVar(&serverPrivateKeyPath, "key", "~/.ssh/id_rsa", "id_rsa file of the server migratord.")
 	jobCmd.Flags().StringVar(&serverUser, "user", "docker", "server's user for ssh connection.")
+
 	rootCmd.AddCommand(jobCmd)
 }

@@ -88,6 +88,8 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	client := pb.NewMigratorServiceClient(conn)
 	peerResp, err := client.ShareMigrationJob(ctx, peerReq)
 
+	logrus.Infof("%v:%v\n", req.ServerAddress, req.ServerPort)
+
 	if err != nil {
 		logrus.Warnln("cannot process migration job")
 		return nil, err

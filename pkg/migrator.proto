@@ -8,6 +8,8 @@ service MigratorService {
     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
 
     rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
+
+    rpc GetMigrationJob (GetMigrationJobRequest) returns (GetMigrationJobResponse);
 }
 
 enum Source {
@@ -57,4 +59,31 @@ message SyncNotificationRequest {
 
 message SyncNotificationResponse {
     
+}
+
+
+message GetMigrationJobRequest {
+}
+
+message GetMigrationJobResponse {
+    repeated MigrationJob jobs = 1;
+}
+message MigrationJob {
+    string migration_id = 1;
+    string client_address = 2;
+    string server_address = 3;
+
+    int32 client_port = 4;
+    int32 server_port = 5;
+
+    string cotniner_id = 6;
+
+    string migration_status = 7;
+    string error_string = 8;
+
+    bool running = 9;
+
+    string creation_date = 10;
+    string role = 11;
+    string migration_method = 12;
 }
