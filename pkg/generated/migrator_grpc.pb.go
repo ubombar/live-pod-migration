@@ -24,7 +24,6 @@ const _ = grpc.SupportPackageIsVersion7
 type MigratorServiceClient interface {
 	CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error)
 	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
-	SyncNotification(ctx context.Context, in *SyncNotificationRequest, opts ...grpc.CallOption) (*SyncNotificationResponse, error)
 	GetMigrationJob(ctx context.Context, in *GetMigrationJobRequest, opts ...grpc.CallOption) (*GetMigrationJobResponse, error)
 	InformStateChange(ctx context.Context, in *InformStateChangeRequest, opts ...grpc.CallOption) (*InformStateChangeResponse, error)
 }
@@ -55,15 +54,6 @@ func (c *migratorServiceClient) ShareMigrationJob(ctx context.Context, in *Share
 	return out, nil
 }
 
-func (c *migratorServiceClient) SyncNotification(ctx context.Context, in *SyncNotificationRequest, opts ...grpc.CallOption) (*SyncNotificationResponse, error) {
-	out := new(SyncNotificationResponse)
-	err := c.cc.Invoke(ctx, "/MigratorService/SyncNotification", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *migratorServiceClient) GetMigrationJob(ctx context.Context, in *GetMigrationJobRequest, opts ...grpc.CallOption) (*GetMigrationJobResponse, error) {
 	out := new(GetMigrationJobResponse)
 	err := c.cc.Invoke(ctx, "/MigratorService/GetMigrationJob", in, out, opts...)
@@ -88,7 +78,6 @@ func (c *migratorServiceClient) InformStateChange(ctx context.Context, in *Infor
 type MigratorServiceServer interface {
 	CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error)
 	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
-	SyncNotification(context.Context, *SyncNotificationRequest) (*SyncNotificationResponse, error)
 	GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error)
 	InformStateChange(context.Context, *InformStateChangeRequest) (*InformStateChangeResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
@@ -103,9 +92,6 @@ func (UnimplementedMigratorServiceServer) CreateMigrationJob(context.Context, *C
 }
 func (UnimplementedMigratorServiceServer) ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareMigrationJob not implemented")
-}
-func (UnimplementedMigratorServiceServer) SyncNotification(context.Context, *SyncNotificationRequest) (*SyncNotificationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SyncNotification not implemented")
 }
 func (UnimplementedMigratorServiceServer) GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMigrationJob not implemented")
@@ -162,24 +148,6 @@ func _MigratorService_ShareMigrationJob_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MigratorService_SyncNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SyncNotificationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigratorServiceServer).SyncNotification(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/MigratorService/SyncNotification",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigratorServiceServer).SyncNotification(ctx, req.(*SyncNotificationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MigratorService_GetMigrationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMigrationJobRequest)
 	if err := dec(in); err != nil {
@@ -230,10 +198,6 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ShareMigrationJob",
 			Handler:    _MigratorService_ShareMigrationJob_Handler,
-		},
-		{
-			MethodName: "SyncNotification",
-			Handler:    _MigratorService_SyncNotification_Handler,
 		},
 		{
 			MethodName: "GetMigrationJob",

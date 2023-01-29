@@ -7,7 +7,7 @@ service MigratorService {
 
     rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
 
-    rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
+    // rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
 
     rpc GetMigrationJob (GetMigrationJobRequest) returns (GetMigrationJobResponse);
 
@@ -62,21 +62,21 @@ message ShareMigrationJobResponse {
     int64 creaton_unix_time = 2;
 }
 
-message SyncNotificationRequest {
-    string migration_id = 1;
+// message SyncNotificationRequest {
+//     string migration_id = 1;
     
-    string state_finished = 2;
-    string state_next = 3;
+//     string state_finished = 2;
+//     string state_next = 3;
     
-    string error_message = 4;
-    bool finished_successful = 5;
+//     string error_message = 4;
+//     bool finished_successful = 5;
     
-    string migration_role = 6;
-}
+//     string migration_role = 6;
+// }
 
-message SyncNotificationResponse {
+// message SyncNotificationResponse {
     
-}
+// }
 
 
 message GetMigrationJobRequest {

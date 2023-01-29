@@ -53,7 +53,7 @@ func (r MigrationRole) PeersRole() MigrationRole {
 type MigrationStatus string
 
 func (m MigrationStatus) ToQueueName() string {
-	return fmt.Sprint("%v-queue", strings.Split(string(m), "-")[1])
+	return fmt.Sprintf("%v-queue", strings.Split(string(m), "-")[1])
 }
 
 const (
@@ -64,6 +64,7 @@ const (
 	StatusRestoring     MigrationStatus = "status-restoring"
 	StatusDone          MigrationStatus = "status-done"
 	StatusError         MigrationStatus = "status-error"
+	StatusNull          MigrationStatus = "status-null"
 )
 
 type MigrationMethod string
@@ -144,8 +145,8 @@ type MigrationJob struct {
 
 func (j MigrationJob) AddressString(role MigrationRole) string {
 	if role == MigrationRoleClient {
-		return fmt.Sprintf("%s:%d", j.ClientIP, j.ClientPort)
+		return fmt.Sprintf("%v:%d", j.ClientIP, j.ClientPort)
 	} else {
-		return fmt.Sprintf("%s:%d", j.ServerIP, j.ServerPort)
+		return fmt.Sprintf("%v:%d", j.ServerIP, j.ServerPort)
 	}
 }

@@ -7,20 +7,14 @@ import (
 )
 
 func (d *daemon) incomingCallback(migrationid string) error {
-	_, _, _, err := FromMigrationId(migrationid, d)
-
-	if err != nil {
-		logrus.Error(err.Error())
-		return err
+	d.GetSyncer().Prepare(migrationid)
+	_, role, _, _ := FromMigrationId(migrationid, d)
+	logrus.Infoln("Starting incoming-handler")
+	if *role == MigrationRoleServer {
+		time.Sleep(time.Second)
 	}
-
-	err = d.GetRPC().NotifyPeerAboutStateChange(migrationid, StatusIncoming, StatusPreparing, nil)
-
-	if err != nil {
-		return err
-	}
-
-	d.GetQueue(PreparingQueue).Push(migrationid)
+	logrus.Infoln("Finishing incoming-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 
 	// d.GetSyncer().RegisterJob(migrationid, StatusIncoming, PreparingQueue)
 	// job, role, err := d.getMigrationObjects(migrationid)
@@ -52,7 +46,7 @@ func (d *daemon) incomingCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	// return nil
 }
 
 func (d *daemon) preparingCallback(migrationid string) error {
@@ -66,7 +60,10 @@ func (d *daemon) preparingCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	d.GetSyncer().Prepare(migrationid)
+	logrus.Infoln("Starting preparing-handler")
+	logrus.Infoln("Finishing preparing-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 }
 
 func (d *daemon) checkpointingCallback(migrationid string) error {
@@ -89,7 +86,10 @@ func (d *daemon) checkpointingCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	d.GetSyncer().Prepare(migrationid)
+	logrus.Infoln("Starting checkpointing-handler")
+	logrus.Infoln("Finishing checkpointing-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 }
 
 func (d *daemon) transferingCallback(migrationid string) error {
@@ -112,7 +112,10 @@ func (d *daemon) transferingCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	d.GetSyncer().Prepare(migrationid)
+	logrus.Infoln("Starting transfering-handler")
+	logrus.Infoln("Finishing transfering-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 }
 
 func (d *daemon) restoringCallback(migrationid string) error {
@@ -135,7 +138,10 @@ func (d *daemon) restoringCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished stage", job.Status)
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	d.GetSyncer().Prepare(migrationid)
+	logrus.Infoln("Starting restoring-handler")
+	logrus.Infoln("Finishing restoring-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 }
 
 func (d *daemon) doneCallback(migrationid string) error {
@@ -152,7 +158,10 @@ func (d *daemon) doneCallback(migrationid string) error {
 	// logrus.Infoln("Migration", job.MigrationId, "finnished successfully")
 
 	// return d.GetSyncer().FinishJob(migrationid, *role)
-	return nil
+	d.GetSyncer().Prepare(migrationid)
+	logrus.Infoln("Starting done-handler")
+	logrus.Infoln("Finishing done-handler")
+	return d.GetSyncer().ConcludeState(migrationid, StatusPreparing)
 }
 
 // Prints the info and deletes all traces of the migration job since it is inactive.

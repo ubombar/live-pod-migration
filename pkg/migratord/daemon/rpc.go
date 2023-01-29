@@ -34,7 +34,7 @@ type RPC interface {
 	Run() error
 	// SendSyncNotification(migrationid string, currentStatus MigrationStatus, peersRole MigrationRole, jobError error) error
 
-	NotifyPeerAboutStateChange(migrationid string, finnished MigrationStatus, next MigrationStatus, jobError error) error
+	NotifyPeerAboutStateChange(migrationid string, next MigrationStatus, jobError error) error
 }
 
 type rpc struct {
@@ -54,6 +54,7 @@ func NewRPC(config RPCConfig, daemon Daemon) *rpc {
 }
 
 func (r *rpc) Run() error {
+	logrus.Infof("gRPC started listening on address %v\n", fmt.Sprintf("%v:%d", r.config.Address, r.config.Port))
 	lis, err := net.Listen("tcp", fmt.Sprintf("%v:%d", r.config.Address, r.config.Port))
 
 	if err != nil {
@@ -70,7 +71,6 @@ func (r *rpc) Run() error {
 	return nil
 }
 
-// Implementation of Inform State Change
 func (r *rpc) InformStateChange(ctx context.Context, req *pb.InformStateChangeRequest) (*pb.InformStateChangeResponse, error) {
 	_, role, _, err := FromMigrationId(req.MigrationId, r.d)
 
@@ -128,12 +128,14 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	client := pb.NewMigratorServiceClient(conn)
 	peerResp, err := client.ShareMigrationJob(ctx, peerReq)
 
-	logrus.Infof("%v:%v\n", req.ServerAddress, req.ServerPort)
+	// logrus.Infof("%v:%v\n", req.ServerAddress, req.ServerPort)
 
 	if err != nil {
 		logrus.Warnln("cannot process migration job")
 		return nil, err
 	}
+
+	defer conn.Close()
 
 	// Create a new job and add it to queue
 	job := &MigrationJob{
@@ -156,6 +158,7 @@ func (r *rpc) CreateMigrationJob(ctx context.Context, req *pb.CreateMigrationJob
 	// Register the job to store
 	r.d.GetJobStore().Add(job.MigrationId, *job)
 	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleClient)
+	r.d.GetSyncer().RegisterJob(job.MigrationId)
 
 	// Add the job to the queue
 	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
@@ -193,6 +196,7 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 	// Register the job to store
 	r.d.GetJobStore().Add(job.MigrationId, *job)
 	r.d.GetRoleStore().Add(job.MigrationId, MigrationRoleServer)
+	r.d.GetSyncer().RegisterJob(job.MigrationId)
 
 	// Add the job to the queue
 	r.d.GetQueue(IncomingQueue).Push(job.MigrationId)
@@ -203,33 +207,33 @@ func (r *rpc) ShareMigrationJob(ctx context.Context, req *pb.ShareMigrationJobRe
 	}, nil
 }
 
-// Invoked on sync notification
-func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequest) (*pb.SyncNotificationResponse, error) {
-	// Get the migration role
-	obj, err := r.d.GetRoleStore().Fetch(req.MigrationId)
+// // Invoked on sync notification
+// func (r *rpc) SyncNotification(ctx context.Context, req *pb.SyncNotificationRequest) (*pb.SyncNotificationResponse, error) {
+// 	// Get the migration role
+// 	obj, err := r.d.GetRoleStore().Fetch(req.MigrationId)
 
-	// logrus.Infoln("received! sync notification")
-	logrus.Info("Received SyncNotification\n")
+// 	// logrus.Infoln("received! sync notification")
+// 	logrus.Info("Received SyncNotification\n")
 
-	if err != nil {
-		return nil, err
-	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	roleObj, ok := obj.(MigrationRole)
+// 	roleObj, ok := obj.(MigrationRole)
 
-	if !ok {
-		return nil, errors.New("role store does not contain role")
-	}
+// 	if !ok {
+// 		return nil, errors.New("role store does not contain role")
+// 	}
 
-	// Invoke finnish job function of syncer with peers role. If finished with error, invoke FinishJobWithError
-	if req.FinishedSuccessful {
-		r.d.GetSyncer().FinishJob(req.MigrationId, roleObj.PeersRole())
-	} else {
-		r.d.GetSyncer().FinishJobWithError(req.MigrationId, errors.New(req.ErrorMessage), roleObj.PeersRole())
-	}
+// 	// Invoke finnish job function of syncer with peers role. If finished with error, invoke FinishJobWithError
+// 	if req.FinishedSuccessful {
+// 		r.d.GetSyncer().FinishJob(req.MigrationId, roleObj.PeersRole())
+// 	} else {
+// 		r.d.GetSyncer().FinishJobWithError(req.MigrationId, errors.New(req.ErrorMessage), roleObj.PeersRole())
+// 	}
 
-	return &pb.SyncNotificationResponse{}, nil
-}
+// 	return &pb.SyncNotificationResponse{}, nil
+// }
 
 func (r *rpc) GetMigrationJob(ctx context.Context, req *pb.GetMigrationJobRequest) (*pb.GetMigrationJobResponse, error) {
 	jobs := []*pb.MigrationJob{}
@@ -288,26 +292,39 @@ func (r *rpc) GetMigrationJob(ctx context.Context, req *pb.GetMigrationJobReques
 	return &pb.GetMigrationJobResponse{Jobs: jobs}, nil
 }
 
-func (r *rpc) NotifyPeerAboutStateChange(migrationid string, finnished MigrationStatus, next MigrationStatus, jobError error) error {
+func (r *rpc) NotifyPeerAboutStateChange(migrationid string, next MigrationStatus, jobError error) error {
 	job, role, _, err := FromMigrationId(migrationid, r.d)
 	if err != nil {
 		return err
 	}
 
+	// conn, err := grpc.Dial(fmt.Sprintf("%v:%d", req.ServerAddress, req.ServerPort), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	// // rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 192.168.122.1:4545: connect: connection refused"
+
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// client := pb.NewMigratorServiceClient(conn)
+	// peerResp, err := client.ShareMigrationJob(ctx, peerReq)
+
 	peerAddress := job.AddressString(role.PeersRole())
+	fmt.Printf("TEST : '%v'\n", peerAddress)
 	conn, err := grpc.Dial(peerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// conn, err := grpc.Dial(peerAddress)
 
 	if err != nil {
 		return err
 	}
 
+	defer conn.Close()
 	client := pb.NewMigratorServiceClient(conn)
 
 	informStateChangeRequest := &pb.InformStateChangeRequest{
-		MigrationId:   migrationid,
-		FinishedState: string(finnished),
-		NextState:     string(next),
-		ErrorString:   nil,
+		MigrationId: migrationid,
+		NextState:   string(next),
+		ErrorString: nil,
 	}
 
 	if jobError != nil {

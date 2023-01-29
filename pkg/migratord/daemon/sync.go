@@ -80,7 +80,7 @@ func (s *Sync) GetNextState() MigrationStatus {
 
 type Syncer interface {
 	// // Register the migration if with requested attributes. current status and the next job queue.
-	// RegisterJob(migrationid string, currentStatus MigrationStatus, nextQueueName string) error
+	RegisterJob(migrationid string) error
 
 	// // Indicates the job has finnished. If the peer still processing it will not add the migration
 	// // to the next queue until peer finishes.
@@ -93,7 +93,12 @@ type Syncer interface {
 	// FinishJobWithError(migrationid string, jobError error, role MigrationRole) error
 
 	// New Versions
-	FinishStateAndSync(migrationid string, stateFinnished MigrationStatus, stateNext MigrationStatus, err error) error
+	// FinishStateAndSync(migrationid string, stateFinnished MigrationStatus, stateNext MigrationStatus, err error) error
+
+	Prepare(migrationid string) error
+
+	ConcludeState(migrationid string, nextState MigrationStatus) error
+	ConcludeStateWithError(migrationid string, stateError error) error
 }
 
 type syncer struct {
@@ -117,8 +122,90 @@ func (s *syncer) GetSyncStore() structures.Store {
 	return s.syncstore
 }
 
-func (s *syncer) FinishStateAndSync(migrationid string, stateFinnished MigrationStatus, stateNext MigrationStatus, err error) error {
+func (s *syncer) RegisterJob(migrationid string) error {
+	sync := Sync{
+		MigrationId:         migrationid,
+		ClientStateFinished: false,
+		ServerStateFinished: false,
+		NextState:           StatusPreparing,
+		Error:               nil,
+	}
 
+	s.GetSyncStore().Add(migrationid, sync)
+	return nil
+}
+
+func (s *syncer) ConcludeState(migrationid string, nextState MigrationStatus) error {
+	s.GetSyncStore().AtomicUpdate(migrationid, func(old interface{}, exists bool) (interface{}, bool) {
+		if !exists {
+			return nil, false
+		}
+
+		sync, ok := old.(Sync)
+
+		if !ok {
+			return nil, false
+		}
+
+		sync.ClientStateFinished = false
+		sync.ServerStateFinished = false
+		sync.NextState = nextState
+		sync.Error = nil
+
+		return sync, false
+	})
+
+	s.d.GetQueue(SyncQueue).Push(migrationid)
+
+	return s.d.GetRPC().NotifyPeerAboutStateChange(migrationid, nextState, nil)
+}
+
+func (s *syncer) ConcludeStateWithError(migrationid string, stateError error) error {
+	s.GetSyncStore().AtomicUpdate(migrationid, func(old interface{}, exists bool) (interface{}, bool) {
+		if !exists {
+			return nil, false
+		}
+
+		sync, ok := old.(Sync)
+
+		if !ok {
+			return nil, false
+		}
+
+		sync.ClientStateFinished = false
+		sync.ServerStateFinished = false
+		sync.Error = stateError
+		sync.NextState = StatusError
+
+		return sync, false
+	})
+
+	s.d.GetQueue(ErrorQueue).Push(migrationid)
+
+	return s.d.GetRPC().NotifyPeerAboutStateChange(migrationid, StatusError, stateError)
+}
+
+func (s *syncer) Prepare(migrationid string) error {
+	s.GetSyncStore().AtomicUpdate(migrationid, func(old interface{}, exists bool) (interface{}, bool) {
+		if !exists {
+			return nil, false
+		}
+
+		sync, ok := old.(Sync)
+
+		if !ok {
+			return nil, false
+		}
+
+		sync.ClientStateFinished = false
+		sync.ServerStateFinished = false
+		sync.NextState = StatusError
+		sync.Error = nil
+
+		return sync, false
+	})
+
+	return nil
 }
 
 // func (s *syncer) FinishStateAndSync(migrationid string, stateFinnished MigrationStatus, stateNext MigrationStatus, migrationError error) error {
