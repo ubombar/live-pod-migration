@@ -1,6 +1,8 @@
 package daemon
 
 import (
+	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/ubombar/live-pod-migration/pkg/migratord/structures"
@@ -132,10 +134,23 @@ func (s *syncer) RegisterJob(migrationid string) error {
 	}
 
 	s.GetSyncStore().Add(migrationid, sync)
+
 	return nil
 }
 
 func (s *syncer) ConcludeState(migrationid string, nextState MigrationStatus) error {
+	obj, err := s.d.GetRoleStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	role, ok := obj.(MigrationRole)
+
+	if !ok {
+		return errors.New("role store does not have migration role")
+	}
+
 	s.GetSyncStore().AtomicUpdate(migrationid, func(old interface{}, exists bool) (interface{}, bool) {
 		if !exists {
 			return nil, false
@@ -147,20 +162,34 @@ func (s *syncer) ConcludeState(migrationid string, nextState MigrationStatus) er
 			return nil, false
 		}
 
-		sync.ClientStateFinished = false
-		sync.ServerStateFinished = false
+		sync.SetRoleStateFininshed(role)
 		sync.NextState = nextState
 		sync.Error = nil
 
-		return sync, false
+		return sync, true
 	})
 
 	s.d.GetQueue(SyncQueue).Push(migrationid)
+
+	obj, _ = s.GetSyncStore().Fetch(migrationid)
+	fmt.Printf("conclude: %v\n", obj)
 
 	return s.d.GetRPC().NotifyPeerAboutStateChange(migrationid, nextState, nil)
 }
 
 func (s *syncer) ConcludeStateWithError(migrationid string, stateError error) error {
+	obj, err := s.d.GetRoleStore().Fetch(migrationid)
+
+	if err != nil {
+		return err
+	}
+
+	role, ok := obj.(MigrationRole)
+
+	if !ok {
+		return errors.New("role store does not have migration role")
+	}
+
 	s.GetSyncStore().AtomicUpdate(migrationid, func(old interface{}, exists bool) (interface{}, bool) {
 		if !exists {
 			return nil, false
@@ -172,13 +201,15 @@ func (s *syncer) ConcludeStateWithError(migrationid string, stateError error) er
 			return nil, false
 		}
 
-		sync.ClientStateFinished = false
-		sync.ServerStateFinished = false
+		sync.SetRoleStateFininshed(role)
 		sync.Error = stateError
 		sync.NextState = StatusError
 
-		return sync, false
+		return sync, true
 	})
+
+	// obj, _ := s.GetSyncStore().Fetch(migrationid)
+	// fmt.Printf("obj: %v\n", obj)
 
 	s.d.GetQueue(ErrorQueue).Push(migrationid)
 
@@ -202,8 +233,11 @@ func (s *syncer) Prepare(migrationid string) error {
 		sync.NextState = StatusError
 		sync.Error = nil
 
-		return sync, false
+		return sync, true
 	})
+
+	obj, _ := s.GetSyncStore().Fetch(migrationid)
+	fmt.Printf("prepare: %v\n", obj)
 
 	return nil
 }

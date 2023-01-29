@@ -99,7 +99,7 @@ func (r *rpc) InformStateChange(ctx context.Context, req *pb.InformStateChangeRe
 			sync.Error = errors.New(*req.ErrorString)
 		}
 
-		return sync, false
+		return sync, true
 	})
 
 	return &pb.InformStateChangeResponse{}, nil
