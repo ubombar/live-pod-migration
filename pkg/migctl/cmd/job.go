@@ -75,7 +75,7 @@ var jobCmd = &cobra.Command{
 		client := pb.NewMigratorServiceClient(conn)
 		defer conn.Close()
 
-		resp, err := client.CreateJob(context.Background(), &pb.CreateJobRequest{
+		_, err = client.CreateJob(context.Background(), &pb.CreateJobRequest{
 			Source: &pb.IPAddress{
 				Address: sourceNodeAddress,
 				Port:    portSource,
@@ -94,11 +94,6 @@ var jobCmd = &cobra.Command{
 
 		if err != nil {
 			fmt.Printf("Cannot create the migration %v\n", err)
-			return
-		}
-
-		if resp.ErrorString != nil {
-			fmt.Printf("Cannot create the migration %v\n", resp.ErrorString)
 			return
 		}
 
