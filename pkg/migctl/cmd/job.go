@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/spf13/cobra"
 	pb "github.com/ubombar/live-pod-migration/pkg/generated"
@@ -46,6 +47,8 @@ var jobCmd = &cobra.Command{
 	Short: "Create a new migration job",
 	Long:  `Create a new migration job from the specitied plags.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		rand.Seed(time.Now().UnixNano())
+
 		if len(args) < 3 {
 			fmt.Println("migctl job requires arguments [source node address] [destination node address] and [container name]")
 			return
