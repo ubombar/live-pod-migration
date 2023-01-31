@@ -68,7 +68,7 @@ message CreateJobRequest {
 }
 
 message CreateJobResponse {
-    optional string error_string = 1;
+
 }
 
 message Job {
@@ -83,7 +83,7 @@ message Job {
     MigrationMethod migration_method = 4;
 
     // Migration stage
-    string migration_stage = 7;
+    string migration_state = 7;
 
     // Error string if there exists any errors
     optional string error_string = 8;
