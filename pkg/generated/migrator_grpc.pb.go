@@ -22,10 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MigratorServiceClient interface {
-	CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error)
-	ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error)
-	GetMigrationJob(ctx context.Context, in *GetMigrationJobRequest, opts ...grpc.CallOption) (*GetMigrationJobResponse, error)
-	InformStateChange(ctx context.Context, in *InformStateChangeRequest, opts ...grpc.CallOption) (*InformStateChangeResponse, error)
+	CreateJob(ctx context.Context, in *CreateJobRequest, opts ...grpc.CallOption) (*CreateJobResponse, error)
+	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
+	UpdateStage(ctx context.Context, in *UpdateStageRequest, opts ...grpc.CallOption) (*UpdateStageResponse, error)
 }
 
 type migratorServiceClient struct {
@@ -36,36 +35,27 @@ func NewMigratorServiceClient(cc grpc.ClientConnInterface) MigratorServiceClient
 	return &migratorServiceClient{cc}
 }
 
-func (c *migratorServiceClient) CreateMigrationJob(ctx context.Context, in *CreateMigrationJobRequest, opts ...grpc.CallOption) (*CreateMigrationJobResponse, error) {
-	out := new(CreateMigrationJobResponse)
-	err := c.cc.Invoke(ctx, "/MigratorService/CreateMigrationJob", in, out, opts...)
+func (c *migratorServiceClient) CreateJob(ctx context.Context, in *CreateJobRequest, opts ...grpc.CallOption) (*CreateJobResponse, error) {
+	out := new(CreateJobResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/CreateJob", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *migratorServiceClient) ShareMigrationJob(ctx context.Context, in *ShareMigrationJobRequest, opts ...grpc.CallOption) (*ShareMigrationJobResponse, error) {
-	out := new(ShareMigrationJobResponse)
-	err := c.cc.Invoke(ctx, "/MigratorService/ShareMigrationJob", in, out, opts...)
+func (c *migratorServiceClient) ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error) {
+	out := new(ListJobsResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/ListJobs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *migratorServiceClient) GetMigrationJob(ctx context.Context, in *GetMigrationJobRequest, opts ...grpc.CallOption) (*GetMigrationJobResponse, error) {
-	out := new(GetMigrationJobResponse)
-	err := c.cc.Invoke(ctx, "/MigratorService/GetMigrationJob", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *migratorServiceClient) InformStateChange(ctx context.Context, in *InformStateChangeRequest, opts ...grpc.CallOption) (*InformStateChangeResponse, error) {
-	out := new(InformStateChangeResponse)
-	err := c.cc.Invoke(ctx, "/MigratorService/InformStateChange", in, out, opts...)
+func (c *migratorServiceClient) UpdateStage(ctx context.Context, in *UpdateStageRequest, opts ...grpc.CallOption) (*UpdateStageResponse, error) {
+	out := new(UpdateStageResponse)
+	err := c.cc.Invoke(ctx, "/MigratorService/UpdateStage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +66,9 @@ func (c *migratorServiceClient) InformStateChange(ctx context.Context, in *Infor
 // All implementations must embed UnimplementedMigratorServiceServer
 // for forward compatibility
 type MigratorServiceServer interface {
-	CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error)
-	ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error)
-	GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error)
-	InformStateChange(context.Context, *InformStateChangeRequest) (*InformStateChangeResponse, error)
+	CreateJob(context.Context, *CreateJobRequest) (*CreateJobResponse, error)
+	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
+	UpdateStage(context.Context, *UpdateStageRequest) (*UpdateStageResponse, error)
 	mustEmbedUnimplementedMigratorServiceServer()
 }
 
@@ -87,17 +76,14 @@ type MigratorServiceServer interface {
 type UnimplementedMigratorServiceServer struct {
 }
 
-func (UnimplementedMigratorServiceServer) CreateMigrationJob(context.Context, *CreateMigrationJobRequest) (*CreateMigrationJobResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateMigrationJob not implemented")
+func (UnimplementedMigratorServiceServer) CreateJob(context.Context, *CreateJobRequest) (*CreateJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateJob not implemented")
 }
-func (UnimplementedMigratorServiceServer) ShareMigrationJob(context.Context, *ShareMigrationJobRequest) (*ShareMigrationJobResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ShareMigrationJob not implemented")
+func (UnimplementedMigratorServiceServer) ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListJobs not implemented")
 }
-func (UnimplementedMigratorServiceServer) GetMigrationJob(context.Context, *GetMigrationJobRequest) (*GetMigrationJobResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMigrationJob not implemented")
-}
-func (UnimplementedMigratorServiceServer) InformStateChange(context.Context, *InformStateChangeRequest) (*InformStateChangeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InformStateChange not implemented")
+func (UnimplementedMigratorServiceServer) UpdateStage(context.Context, *UpdateStageRequest) (*UpdateStageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateStage not implemented")
 }
 func (UnimplementedMigratorServiceServer) mustEmbedUnimplementedMigratorServiceServer() {}
 
@@ -112,74 +98,56 @@ func RegisterMigratorServiceServer(s grpc.ServiceRegistrar, srv MigratorServiceS
 	s.RegisterService(&MigratorService_ServiceDesc, srv)
 }
 
-func _MigratorService_CreateMigrationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateMigrationJobRequest)
+func _MigratorService_CreateJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateJobRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MigratorServiceServer).CreateMigrationJob(ctx, in)
+		return srv.(MigratorServiceServer).CreateJob(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/MigratorService/CreateMigrationJob",
+		FullMethod: "/MigratorService/CreateJob",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigratorServiceServer).CreateMigrationJob(ctx, req.(*CreateMigrationJobRequest))
+		return srv.(MigratorServiceServer).CreateJob(ctx, req.(*CreateJobRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MigratorService_ShareMigrationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ShareMigrationJobRequest)
+func _MigratorService_ListJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListJobsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MigratorServiceServer).ShareMigrationJob(ctx, in)
+		return srv.(MigratorServiceServer).ListJobs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/MigratorService/ShareMigrationJob",
+		FullMethod: "/MigratorService/ListJobs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigratorServiceServer).ShareMigrationJob(ctx, req.(*ShareMigrationJobRequest))
+		return srv.(MigratorServiceServer).ListJobs(ctx, req.(*ListJobsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MigratorService_GetMigrationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMigrationJobRequest)
+func _MigratorService_UpdateStage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateStageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MigratorServiceServer).GetMigrationJob(ctx, in)
+		return srv.(MigratorServiceServer).UpdateStage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/MigratorService/GetMigrationJob",
+		FullMethod: "/MigratorService/UpdateStage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigratorServiceServer).GetMigrationJob(ctx, req.(*GetMigrationJobRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MigratorService_InformStateChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InformStateChangeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MigratorServiceServer).InformStateChange(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/MigratorService/InformStateChange",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MigratorServiceServer).InformStateChange(ctx, req.(*InformStateChangeRequest))
+		return srv.(MigratorServiceServer).UpdateStage(ctx, req.(*UpdateStageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,20 +160,16 @@ var MigratorService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MigratorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateMigrationJob",
-			Handler:    _MigratorService_CreateMigrationJob_Handler,
+			MethodName: "CreateJob",
+			Handler:    _MigratorService_CreateJob_Handler,
 		},
 		{
-			MethodName: "ShareMigrationJob",
-			Handler:    _MigratorService_ShareMigrationJob_Handler,
+			MethodName: "ListJobs",
+			Handler:    _MigratorService_ListJobs_Handler,
 		},
 		{
-			MethodName: "GetMigrationJob",
-			Handler:    _MigratorService_GetMigrationJob_Handler,
-		},
-		{
-			MethodName: "InformStateChange",
-			Handler:    _MigratorService_InformStateChange_Handler,
+			MethodName: "UpdateStage",
+			Handler:    _MigratorService_UpdateStage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
