@@ -30,7 +30,7 @@ enum MigrationState {
 }
 
 enum MigrationMethod {
-    cold_migration = 0;
+    cold = 0;
 }
 
 enum MigrationRole {
@@ -50,10 +50,7 @@ message CreateJobRequest {
     IPAddress destination = 2;
     
     // Either specify the container name or container id
-    oneof container {
-        string name = 3;
-        string id = 4;
-    }
+    string container_name  = 3;
     
     // User's of the hosts
     string source_user = 5;
