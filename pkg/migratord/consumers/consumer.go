@@ -7,7 +7,7 @@ import (
 
 type Consumer interface {
 	Run() error
-	Consume(interface{}) (error, bool)
+	consume(interface{}) (error, bool)
 }
 
 type ConsumerCallback func(id string) error
@@ -36,7 +36,7 @@ func (c *consumer) Run() error {
 
 			// Blocking
 			obj := c.queue.Pop()
-			err, exit = c.Consume(obj)
+			err, exit = c.consume(obj)
 
 			if err != nil {
 				logrus.Errorln(err)
@@ -47,7 +47,7 @@ func (c *consumer) Run() error {
 }
 
 // Consumes the object. Returns true if we want to exit.
-func (c *consumer) Consume(obj interface{}) (error, bool) {
+func (c *consumer) consume(obj interface{}) (error, bool) {
 	if id, ok := obj.(string); ok {
 		// Call the callback
 		return c.callback(id), false
