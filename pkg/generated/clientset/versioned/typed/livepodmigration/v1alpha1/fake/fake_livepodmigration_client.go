@@ -28,6 +28,10 @@ type FakeLivepodmigrationV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeLivepodmigrationV1alpha1) ColdMigrations(namespace string) v1alpha1.ColdMigrationInterface {
+	return &FakeColdMigrations{c, namespace}
+}
+
 func (c *FakeLivepodmigrationV1alpha1) LivePodMigrationRequests(namespace string) v1alpha1.LivePodMigrationRequestInterface {
 	return &FakeLivePodMigrationRequests{c, namespace}
 }
