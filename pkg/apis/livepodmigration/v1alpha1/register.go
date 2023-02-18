@@ -46,8 +46,8 @@ var (
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&LivePodMigration{},
-		&LivePodMigrationList{},
+		&LivePodMigrationRequest{},
+		&LivePodMigrationRequestList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
