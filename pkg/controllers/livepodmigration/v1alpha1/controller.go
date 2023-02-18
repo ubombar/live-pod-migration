@@ -17,7 +17,6 @@
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -26,8 +25,6 @@ import (
 	informers "github.com/ubombar/live-pod-migration/pkg/generated/informers/externalversions/livepodmigration/v1alpha1"
 	listers "github.com/ubombar/live-pod-migration/pkg/generated/listers/livepodmigration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	coreinformers "k8s.io/client-go/informers/core/v1"
@@ -39,8 +36,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-
-	v1alphav1types "github.com/ubombar/live-pod-migration/pkg/apis/livepodmigration/v1alpha1"
 )
 
 const controllerAgentName = "livepodmigration-controller"
@@ -217,122 +212,125 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	// Get the Foo resource with this namespace/name
-	lpm, err := c.livePodMigrationsLister.LivePodMigrations(namespace).Get(name)
-	if err != nil {
-		// The Foo resource may no longer exist, in which case we stop
-		// processing.
-		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("lpm '%s' in work queue no longer exists", key))
-			return nil
-		}
-	}
+	fmt.Printf("namespace: %v\n", namespace)
+	fmt.Printf("name: %v\n", name)
 
-	lpmCopy := lpm.DeepCopy()
+	// // Get the Foo resource with this namespace/name
+	// lpm, err := c.livePodMigrationsLister.LivePodMigrations(namespace).Get(name)
+	// if err != nil {
+	// 	// The Foo resource may no longer exist, in which case we stop
+	// 	// processing.
+	// 	if errors.IsNotFound(err) {
+	// 		utilruntime.HandleError(fmt.Errorf("lpm '%s' in work queue no longer exists", key))
+	// 		return nil
+	// 	}
+	// }
 
-	if lpm.Status.MigrationStatus == "" {
-		// If the lpm is just created
-		err := c.checkEligibilityOfMigration(lpmCopy)
+	// lpmCopy := lpm.DeepCopy()
 
-		lpmCopy.Status = v1alphav1types.LivePodMigrationStatus{
-			MigrationStatus:  v1alphav1types.MigrationStatusPending,
-			MigrationMessage: "",
-			PodAccessible:    true,
-			CheckpointFile:   "",
-		}
+	// if lpm.Status.MigrationStatus == "" {
+	// 	// If the lpm is just created
+	// 	err := c.checkEligibilityOfMigration(lpmCopy)
 
-		if err != nil {
-			lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError
-			lpmCopy.Status.MigrationMessage = fmt.Sprint(err)
-		}
+	// 	lpmCopy.Status = v1alphav1types.LivePodMigrationStatus{
+	// 		MigrationStatus:  v1alphav1types.MigrationStatusPending,
+	// 		MigrationMessage: "",
+	// 		PodAccessible:    true,
+	// 		CheckpointFile:   "",
+	// 	}
 
-		_, err = c.livepodmigrationclientset.LivepodmigrationV1alpha1().LivePodMigrations(namespace).UpdateStatus(context.Background(), lpmCopy, v1.UpdateOptions{})
+	// 	if err != nil {
+	// 		lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError
+	// 		lpmCopy.Status.MigrationMessage = fmt.Sprint(err)
+	// 	}
 
-		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("cannot update the lpm object '%s'", err))
-			return nil
-		}
+	// 	_, err = c.livepodmigrationclientset.LivepodmigrationV1alpha1().LivePodMigrations(namespace).UpdateStatus(context.Background(), lpmCopy, v1.UpdateOptions{})
 
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", fmt.Sprintf("We have updated the object on namespace %s \n", namespace))
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCheckpointing {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Checkpointing")
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusTransferring {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Transferring")
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusRestoring {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Restoring")
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCleaning {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Cleaning")
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCompleted {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Completed")
-	} else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusError {
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Error")
-	} else {
-		// Unknown status, drop
-		c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Uknown status received")
-	}
+	// 	if err != nil {
+	// 		utilruntime.HandleError(fmt.Errorf("cannot update the lpm object '%s'", err))
+	// 		return nil
+	// 	}
 
-	return nil
-}
-
-// Checks if the state of the cluster is eligible to migration.
-// To see the list of which functions to check see the docs.
-func (c *Controller) checkEligibilityOfMigration(lpm *v1alphav1types.LivePodMigration) error {
-	dsets, err := c.kubeclientset.AppsV1().DaemonSets(LivePodMigrationNamespace).List(context.Background(), v1.ListOptions{})
-	if err != nil {
-		klog.Error("cannot find")
-		return err
-	}
-
-	nodes, err := c.kubeclientset.CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
-	if err != nil {
-		klog.Error("cannot get nodes")
-		return err
-	}
-
-	var numberOfWorkerNodesInCluster int32 = 0
-	var migratorInstalled bool = false
-
-	for _, node := range nodes.Items {
-		if !node.Spec.Unschedulable {
-			numberOfWorkerNodesInCluster += 1
-		}
-	}
-
-	for _, dset := range dsets.Items {
-		if dset.Labels[LivePodMigrationMigratorLabel] == "" &&
-			dset.Status.CurrentNumberScheduled == numberOfWorkerNodesInCluster {
-			migratorInstalled = true
-			break
-		}
-	}
-
-	if !migratorInstalled {
-		return fmt.Errorf("cannot find the migrator's in the cluster")
-	}
-
-	node, err := c.kubeclientset.CoreV1().Nodes().Get(context.Background(), lpm.Spec.DestinationNode, v1.GetOptions{})
-
-	if err != nil {
-		return fmt.Errorf("cannot find the destination node for migration")
-	}
-
-	if node.Spec.Unschedulable {
-		return fmt.Errorf("destination node is unschedulable")
-	}
-
-	pod, err := c.kubeclientset.CoreV1().Pods(lpm.Spec.PodNamespace).Get(context.Background(), lpm.Spec.PodName, v1.GetOptions{})
-
-	if err != nil {
-		return fmt.Errorf("cannot find the described pod")
-	}
-
-	if pod.Status.Phase != corev1.PodRunning {
-		return fmt.Errorf("pod is not running")
-	}
-
-	if pod.Spec.NodeName == lpm.Spec.DestinationNode {
-		return fmt.Errorf("pod is already on the destination node")
-	}
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", fmt.Sprintf("We have updated the object on namespace %s \n", namespace))
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCheckpointing {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Checkpointing")
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusTransferring {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Transferring")
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusRestoring {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Restoring")
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCleaning {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Cleaning")
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCompleted {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Completed")
+	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusError {
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Error")
+	// } else {
+	// 	// Unknown status, drop
+	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Uknown status received")
+	// }
 
 	return nil
 }
+
+// // Checks if the state of the cluster is eligible to migration.
+// // To see the list of which functions to check see the docs.
+// func (c *Controller) checkEligibilityOfMigration(lpm *v1alphav1types.LivePodMigration) error {
+// 	dsets, err := c.kubeclientset.AppsV1().DaemonSets(LivePodMigrationNamespace).List(context.Background(), v1.ListOptions{})
+// 	if err != nil {
+// 		klog.Error("cannot find")
+// 		return err
+// 	}
+
+// 	nodes, err := c.kubeclientset.CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
+// 	if err != nil {
+// 		klog.Error("cannot get nodes")
+// 		return err
+// 	}
+
+// 	var numberOfWorkerNodesInCluster int32 = 0
+// 	var migratorInstalled bool = false
+
+// 	for _, node := range nodes.Items {
+// 		if !node.Spec.Unschedulable {
+// 			numberOfWorkerNodesInCluster += 1
+// 		}
+// 	}
+
+// 	for _, dset := range dsets.Items {
+// 		if dset.Labels[LivePodMigrationMigratorLabel] == "" &&
+// 			dset.Status.CurrentNumberScheduled == numberOfWorkerNodesInCluster {
+// 			migratorInstalled = true
+// 			break
+// 		}
+// 	}
+
+// 	if !migratorInstalled {
+// 		return fmt.Errorf("cannot find the migrator's in the cluster")
+// 	}
+
+// 	node, err := c.kubeclientset.CoreV1().Nodes().Get(context.Background(), lpm.Spec.DestinationNode, v1.GetOptions{})
+
+// 	if err != nil {
+// 		return fmt.Errorf("cannot find the destination node for migration")
+// 	}
+
+// 	if node.Spec.Unschedulable {
+// 		return fmt.Errorf("destination node is unschedulable")
+// 	}
+
+// 	pod, err := c.kubeclientset.CoreV1().Pods(lpm.Spec.PodNamespace).Get(context.Background(), lpm.Spec.PodName, v1.GetOptions{})
+
+// 	if err != nil {
+// 		return fmt.Errorf("cannot find the described pod")
+// 	}
+
+// 	if pod.Status.Phase != corev1.PodRunning {
+// 		return fmt.Errorf("pod is not running")
+// 	}
+
+// 	if pod.Spec.NodeName == lpm.Spec.DestinationNode {
+// 		return fmt.Errorf("pod is already on the destination node")
+// 	}
+
+// 	return nil
+// }
