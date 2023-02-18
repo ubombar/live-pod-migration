@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ubombar/live-pod-migration/pkg/apis/livepodmigration/v1alpha1"
 	clientset "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned"
 	livepodmigrationscheme "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned/scheme"
 	informers "github.com/ubombar/live-pod-migration/pkg/generated/informers/externalversions/livepodmigration/v1alpha1"
@@ -111,6 +112,7 @@ func NewController(
 	return controller
 }
 
+// enqueues the live pod migration request to work queue
 func (c *Controller) enqueueLivePodMigrationRequest(obj interface{}) {
 	var key string
 	var err error
@@ -201,67 +203,30 @@ func (c *Controller) processNextWorkItem() bool {
 func (c *Controller) syncLivePodMigrationRequestHandler(key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
 	}
 
-	fmt.Printf("namespace: %v\n", namespace)
-	fmt.Printf("name: %v\n", name)
+	lpmr, err := c.livePodMigrationRequestLister.LivePodMigrationRequests(namespace).Get(name)
 
-	// // Get the Foo resource with this namespace/name
-	// lpm, err := c.livePodMigrationsLister.LivePodMigrations(namespace).Get(name)
-	// if err != nil {
-	// 	// The Foo resource may no longer exist, in which case we stop
-	// 	// processing.
-	// 	if errors.IsNotFound(err) {
-	// 		utilruntime.HandleError(fmt.Errorf("lpm '%s' in work queue no longer exists", key))
-	// 		return nil
-	// 	}
-	// }
+	if err != nil {
+		return err
+	}
 
-	// lpmCopy := lpm.DeepCopy()
+	// Create a deep copy
+	lpmrNew := lpmr.DeepCopy()
 
-	// if lpm.Status.MigrationStatus == "" {
-	// 	// If the lpm is just created
-	// 	err := c.checkEligibilityOfMigration(lpmCopy)
+	// Update the copied lpmr's request state if newly created
+	if lpmr.Status.RequestState == "" {
+		lpmrNew.Status.RequestState = v1alpha1.LivePodMigrationRequestStatePending
+	}
 
-	// 	lpmCopy.Status = v1alphav1types.LivePodMigrationStatus{
-	// 		MigrationStatus:  v1alphav1types.MigrationStatusPending,
-	// 		MigrationMessage: "",
-	// 		PodAccessible:    true,
-	// 		CheckpointFile:   "",
-	// 	}
-
-	// 	if err != nil {
-	// 		lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError
-	// 		lpmCopy.Status.MigrationMessage = fmt.Sprint(err)
-	// 	}
-
-	// 	_, err = c.livepodmigrationclientset.LivepodmigrationV1alpha1().LivePodMigrations(namespace).UpdateStatus(context.Background(), lpmCopy, v1.UpdateOptions{})
-
-	// 	if err != nil {
-	// 		utilruntime.HandleError(fmt.Errorf("cannot update the lpm object '%s'", err))
-	// 		return nil
-	// 	}
-
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", fmt.Sprintf("We have updated the object on namespace %s \n", namespace))
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCheckpointing {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Checkpointing")
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusTransferring {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Transferring")
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusRestoring {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Restoring")
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCleaning {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Cleaning")
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusCompleted {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Completed")
-	// } else if lpm.Status.MigrationStatus == v1alphav1types.MigrationStatusError {
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Error")
-	// } else {
-	// 	// Unknown status, drop
-	// 	c.recorder.Event(lpmCopy, corev1.EventTypeNormal, "SuccessSynced", "Uknown status received")
-	// }
+	// If the state is pending then validate configuration and create migration object.
+	if lpmrNew.Status.RequestState == v1alpha1.LivePodMigrationRequestStatePending {
+		// TODO: Validate and create migration object.
+	}
 
 	return nil
 }

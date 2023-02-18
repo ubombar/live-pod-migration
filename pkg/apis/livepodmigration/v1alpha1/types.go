@@ -52,8 +52,9 @@ type LivePodMigrationRequestList struct {
 	Items []LivePodMigrationRequest `json:"items"`
 }
 
-// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Cold migration object
 type ColdMigration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

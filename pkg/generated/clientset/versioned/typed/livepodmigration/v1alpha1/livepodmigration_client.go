@@ -28,17 +28,12 @@ import (
 
 type LivepodmigrationV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	ColdMigrationsGetter
 	LivePodMigrationRequestsGetter
 }
 
 // LivepodmigrationV1alpha1Client is used to interact with features provided by the livepodmigration.edgenet.io group.
 type LivepodmigrationV1alpha1Client struct {
 	restClient rest.Interface
-}
-
-func (c *LivepodmigrationV1alpha1Client) ColdMigrations(namespace string) ColdMigrationInterface {
-	return newColdMigrations(c, namespace)
 }
 
 func (c *LivepodmigrationV1alpha1Client) LivePodMigrationRequests(namespace string) LivePodMigrationRequestInterface {

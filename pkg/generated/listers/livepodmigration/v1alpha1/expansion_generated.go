@@ -18,14 +18,6 @@ limitations under the License.
 
 package v1alpha1
 
-// ColdMigrationListerExpansion allows custom methods to be added to
-// ColdMigrationLister.
-type ColdMigrationListerExpansion interface{}
-
-// ColdMigrationNamespaceListerExpansion allows custom methods to be added to
-// ColdMigrationNamespaceLister.
-type ColdMigrationNamespaceListerExpansion interface{}
-
 // LivePodMigrationRequestListerExpansion allows custom methods to be added to
 // LivePodMigrationRequestLister.
 type LivePodMigrationRequestListerExpansion interface{}

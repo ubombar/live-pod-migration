@@ -53,8 +53,6 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=livepodmigration.edgenet.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("coldmigrations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Livepodmigration().V1alpha1().ColdMigrations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("livepodmigrationrequests"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Livepodmigration().V1alpha1().LivePodMigrationRequests().Informer()}, nil
 
