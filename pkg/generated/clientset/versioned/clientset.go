@@ -22,27 +22,26 @@ import (
 	"fmt"
 	"net/http"
 
-	livepodmigrationv1alpha1 "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned/typed/livepodmigration/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
+	samplecontrollerv1alpha1 "k8s.io/sample-controller/pkg/generated/clientset/versioned/typed/samplecontroller/v1alpha1"
 )
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	LivepodmigrationV1alpha1() livepodmigrationv1alpha1.LivepodmigrationV1alpha1Interface
+	SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	livepodmigrationV1alpha1 *livepodmigrationv1alpha1.LivepodmigrationV1alpha1Client
+	samplecontrollerV1alpha1 *samplecontrollerv1alpha1.SamplecontrollerV1alpha1Client
 }
 
-// LivepodmigrationV1alpha1 retrieves the LivepodmigrationV1alpha1Client
-func (c *Clientset) LivepodmigrationV1alpha1() livepodmigrationv1alpha1.LivepodmigrationV1alpha1Interface {
-	return c.livepodmigrationV1alpha1
+// SamplecontrollerV1alpha1 retrieves the SamplecontrollerV1alpha1Client
+func (c *Clientset) SamplecontrollerV1alpha1() samplecontrollerv1alpha1.SamplecontrollerV1alpha1Interface {
+	return c.samplecontrollerV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -89,7 +88,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.livepodmigrationV1alpha1, err = livepodmigrationv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.samplecontrollerV1alpha1, err = samplecontrollerv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.livepodmigrationV1alpha1 = livepodmigrationv1alpha1.New(c)
+	cs.samplecontrollerV1alpha1 = samplecontrollerv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
