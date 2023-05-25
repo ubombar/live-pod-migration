@@ -8,8 +8,8 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: live-pod-migration
-repo: live-pod-migration
+projectName: lpm-mpod-controller
+repo: lpm-mpod-controller
 resources:
 - api:
     crdVersion: v1
@@ -18,24 +18,22 @@ resources:
   domain: my.domain
   group: lpm.edgenet.io
   kind: MigrationPod
-  path: live-pod-migration/api/v1alpha1
+  path: lpm-mpod-controller/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
   domain: my.domain
   group: lpm.edgenet.io
   kind: LPMJobRequest
-  path: live-pod-migration/api/v1alpha1
+  path: lpm-mpod-controller/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
   domain: my.domain
   group: lpm.edgenet.io
   kind: LPMJob
-  path: live-pod-migration/api/v1alpha1
+  path: lpm-mpod-controller/api/v1alpha1
   version: v1alpha1
 version: "3"

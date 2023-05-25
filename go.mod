@@ -1,4 +1,4 @@
-module live-pod-migration
+module lpm-mpod-controller
 
 go 1.19
 

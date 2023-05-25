@@ -1,7 +1,0 @@
-apiVersion:  lpm.edgenet.io/v1alpha1
-kind: LPMJobRequest
-metadata:
-  name: demo-migration-request
-spec:
-  podName: test-mpod
-  nodeName: node1

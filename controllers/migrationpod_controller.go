@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	lpmedgenetiov1alpha1 "live-pod-migration/api/v1alpha1"
+	lpmedgenetiov1alpha1 "lpm-mpod-controller/api/v1alpha1"
 )
 
 // MigrationPodReconciler reconciles a MigrationPod object

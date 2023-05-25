@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	lpmedgenetiov1alpha1 "live-pod-migration/api/v1alpha1"
+	lpmedgenetiov1alpha1 "lpm-mpod-controller/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

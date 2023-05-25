@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: lpmjobrequest-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: live-pod-migration
-    app.kubernetes.io/part-of: live-pod-migration
+    app.kubernetes.io/created-by: lpm-mpod-controller
+    app.kubernetes.io/part-of: lpm-mpod-controller
     app.kubernetes.io/managed-by: kustomize
   name: lpmjobrequest-editor-role
 rules:

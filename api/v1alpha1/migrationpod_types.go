@@ -29,13 +29,13 @@ type MigrationPodSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MigrationPod. Edit migrationpod_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Foo                string               `json:"foo,omitempty"`
+	ContainerTemplates []ContainerTemplates `json:"containerTemplates,omitempty"`
 }
 
-// MigrationPodStatus defines the observed state of MigrationPod
-type MigrationPodStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+type ContainerTemplates struct {
+	ContainerName  string `json:"containerName,omitempty"`
+	ContainerImage string `json:"containerImage,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -46,8 +46,7 @@ type MigrationPod struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MigrationPodSpec   `json:"spec,omitempty"`
-	Status MigrationPodStatus `json:"status,omitempty"`
+	Spec MigrationPodSpec `json:"spec,omitempty"`
 }
 
 //+kubebuilder:object:root=true

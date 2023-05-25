@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	lpmedgenetiov1alpha1 "live-pod-migration/api/v1alpha1"
-	"live-pod-migration/controllers"
+	lpmedgenetiov1alpha1 "lpm-mpod-controller/api/v1alpha1"
+	"lpm-mpod-controller/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -71,7 +71,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "ef6257f0.my.domain",
+		LeaderElectionID:       "0eb7e6d8.my.domain",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -94,20 +94,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MigrationPod")
-		os.Exit(1)
-	}
-	if err = (&controllers.LPMJobRequestReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "LPMJobRequest")
-		os.Exit(1)
-	}
-	if err = (&controllers.LPMJobReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "LPMJob")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
