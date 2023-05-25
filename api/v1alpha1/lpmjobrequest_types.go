@@ -28,14 +28,16 @@ type LPMJobRequestSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of LPMJobRequest. Edit lpmjobrequest_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	PodName  string `json:"podName,omitempty"`
+	NodeName string `json:"nodeName,omitempty"`
 }
 
 // LPMJobRequestStatus defines the observed state of LPMJobRequest
 type LPMJobRequestStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Accepted     bool   `json:"accepted,omitempty"`
+	ErrorMessage string `json:"errorMessage,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -20,22 +20,46 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type MigrationStatus string
+
+const (
+	Processing    MigrationStatus = "Processing"
+	Checkpointing MigrationStatus = "Checkpointing"
+	Transfering   MigrationStatus = "Transfering"
+	Restoring     MigrationStatus = "Restoring"
+	Cleaning      MigrationStatus = "Cleaning"
+	Done          MigrationStatus = "Done"
+	Error         MigrationStatus = "Error"
+)
 
 // LPMJobSpec defines the desired state of LPMJob
 type LPMJobSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of LPMJob. Edit lpmjob_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
 }
 
 // LPMJobStatus defines the observed state of LPMJob
 type LPMJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	SourcePodName     string `json:"sourcePodName,omitempty"`
+	SourceNodeName    string `json:"sourceNodeName,omitempty"`
+	SourceNodeAddress string `json:"sourceNodeAddress,omitempty"`
+
+	DestionationPodName     string `json:"destionationPodName,omitempty"`
+	DestionationNodeName    string `json:"destionationNodeName,omitempty"`
+	DestionationNodeAddress string `json:"destionationNodeAddress,omitempty"`
+
+	MigrationStatus MigrationStatus `json:"migrationStatus,omitempty"`
+
+	NumberOfContainers int               `json:"numberOfContainers,omitempty"`
+	ContainerStatuses  ContainerStatuses `json:"containerStatuses,omitempty"`
+}
+
+type ContainerStatuses struct {
+	ContainerIdentifier      string          `json:"containerIdentifier,omitempty"`
+	ContainerMigrationStatus MigrationStatus `json:"containerMigrationStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true

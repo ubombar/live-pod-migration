@@ -34,14 +34,33 @@ spec:
             type: object
           spec:
             description: LPMJobSpec defines the desired state of LPMJob
-            properties:
-              foo:
-                description: Foo is an example field of LPMJob. Edit lpmjob_types.go
-                  to remove/update
-                type: string
             type: object
           status:
             description: LPMJobStatus defines the observed state of LPMJob
+            properties:
+              containerStatuses:
+                properties:
+                  containerIdentifier:
+                    type: string
+                  containerMigrationStatus:
+                    type: string
+                type: object
+              destionationNodeAddress:
+                type: string
+              destionationNodeName:
+                type: string
+              destionationPodName:
+                type: string
+              migrationStatus:
+                type: string
+              numberOfContainers:
+                type: integer
+              sourceNodeAddress:
+                type: string
+              sourceNodeName:
+                type: string
+              sourcePodName:
+                type: string
             type: object
         type: object
     served: true
