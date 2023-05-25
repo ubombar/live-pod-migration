@@ -36,6 +36,8 @@ spec:
             description: MigrationPodSpec defines the desired state of MigrationPod
             properties:
               containerTemplates:
+                description: Foo is an example field of MigrationPod. Edit migrationpod_types.go
+                  to remove/update
                 items:
                   properties:
                     containerImage:
@@ -44,11 +46,11 @@ spec:
                       type: string
                   type: object
                 type: array
-              foo:
-                description: Foo is an example field of MigrationPod. Edit migrationpod_types.go
-                  to remove/update
-                type: string
+            required:
+            - containerTemplates
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

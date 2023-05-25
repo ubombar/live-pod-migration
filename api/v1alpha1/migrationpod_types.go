@@ -29,8 +29,7 @@ type MigrationPodSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MigrationPod. Edit migrationpod_types.go to remove/update
-	Foo                string               `json:"foo,omitempty"`
-	ContainerTemplates []ContainerTemplates `json:"containerTemplates,omitempty"`
+	ContainerTemplates []ContainerTemplates `json:"containerTemplates"`
 }
 
 type ContainerTemplates struct {
@@ -46,7 +45,7 @@ type MigrationPod struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec MigrationPodSpec `json:"spec,omitempty"`
+	Spec MigrationPodSpec `json:"spec"`
 }
 
 //+kubebuilder:object:root=true

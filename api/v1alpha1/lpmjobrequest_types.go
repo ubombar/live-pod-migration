@@ -28,8 +28,8 @@ type LPMJobRequestSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	PodName  string `json:"podName,omitempty"`
-	NodeName string `json:"nodeName,omitempty"`
+	PodName  string `json:"podName"`
+	NodeName string `json:"nodeName"`
 }
 
 // LPMJobRequestStatus defines the observed state of LPMJobRequest

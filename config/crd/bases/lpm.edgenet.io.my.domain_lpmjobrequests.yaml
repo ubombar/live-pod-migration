@@ -39,6 +39,9 @@ spec:
                 type: string
               podName:
                 type: string
+            required:
+            - nodeName
+            - podName
             type: object
           status:
             description: LPMJobRequestStatus defines the observed state of LPMJobRequest
