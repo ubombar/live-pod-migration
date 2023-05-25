@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - lpm.edgenet.io.my.domain
+  - lpm.edgenet.io
   resources:
   - migrationpods
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - lpm.edgenet.io.my.domain
+  - lpm.edgenet.io
   resources:
   - migrationpods/finalizers
   verbs:
   - update
 - apiGroups:
-  - lpm.edgenet.io.my.domain
+  - lpm.edgenet.io
   resources:
   - migrationpods/status
   verbs:

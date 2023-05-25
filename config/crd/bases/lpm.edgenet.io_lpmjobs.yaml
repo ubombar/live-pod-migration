@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: lpmjobs.lpm.edgenet.io.my.domain
+  name: lpmjobs.lpm.edgenet.io
 spec:
-  group: lpm.edgenet.io.my.domain
+  group: lpm.edgenet.io
   names:
     kind: LPMJob
     listKind: LPMJobList

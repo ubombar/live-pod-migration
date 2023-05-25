@@ -2,9 +2,9 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/lpm.edgenet.io.my.domain_migrationpods.yaml
-- bases/lpm.edgenet.io.my.domain_lpmjobrequests.yaml
-- bases/lpm.edgenet.io.my.domain_lpmjobs.yaml
+- bases/lpm.edgenet.io_migrationpods.yaml
+- bases/lpm.edgenet.io_lpmjobrequests.yaml
+- bases/lpm.edgenet.io_lpmjobs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

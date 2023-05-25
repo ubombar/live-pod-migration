@@ -1,6 +1,0 @@
-## Append samples you want in your CSV to this file as resources ##
-resources:
-- lpm.edgenet.io_v1alpha1_migrationpod.yaml
-- lpm.edgenet.io_v1alpha1_lpmjobrequest.yaml
-- lpm.edgenet.io_v1alpha1_lpmjob.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples

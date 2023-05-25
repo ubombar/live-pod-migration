@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,9 +34,9 @@ type MigrationPodReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=lpm.edgenet.io.my.domain,resources=migrationpods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=lpm.edgenet.io.my.domain,resources=migrationpods/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=lpm.edgenet.io.my.domain,resources=migrationpods/finalizers,verbs=update
+//+kubebuilder:rbac:groups=lpm.edgenet.io,resources=migrationpods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=lpm.edgenet.io,resources=migrationpods/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=lpm.edgenet.io,resources=migrationpods/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -50,6 +51,7 @@ func (r *MigrationPodReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	fmt.Println("TEst!")
 
 	return ctrl.Result{}, nil
 }

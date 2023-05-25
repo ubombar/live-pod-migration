@@ -12,7 +12,7 @@ metadata:
   name: lpmjob-viewer-role
 rules:
 - apiGroups:
-  - lpm.edgenet.io.my.domain
+  - lpm.edgenet.io
   resources:
   - lpmjobs
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - lpm.edgenet.io.my.domain
+  - lpm.edgenet.io
   resources:
   - lpmjobs/status
   verbs:
