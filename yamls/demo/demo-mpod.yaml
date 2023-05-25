@@ -1,0 +1,8 @@
+apiVersion:  lpm.edgenet.io/v1alpha1
+kind: MigrationPod
+metadata:
+  name: test-mpod
+spec:
+  containers:
+   - containerName: test-container
+     containerImage: ubuntu
