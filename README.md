@@ -96,6 +96,10 @@ This command will create a migration job and invoke the migratord. You can watch
 
 This project aims to implement this functionality in kubernetes. We will se what future will bring.
 
+## Setting up Cluster
+Use the following command to setup a node in the cluster.
+```source <(curl -s https://gist.githubusercontent.com/ubombar/0a64ff40a15bcbc5988e23dd28a9ecca/raw/44f2f168452dc44a3f6b35aeaf6b5df3960491ca/kubernetes-installer.sh)```
+
 ## About the Author
 My name is Ufuk Bombar. Feel free to check my github profile [ubombar](https://github.com/ubombar) or contact me regarding this repository at ufukbombar@gmail.com. 
 
