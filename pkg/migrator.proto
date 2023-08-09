@@ -2,105 +2,125 @@ syntax = "proto3";
 
 option go_package = ".";
 
+
 service MigratorService {
-    rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
+    rpc CreateJob (CreateJobRequest) returns (CreateJobResponse);
 
-    rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
+    rpc ListJobs (ListJobsRequest) returns (ListJobsResponse);
 
-    // rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
-
-    rpc GetMigrationJob (GetMigrationJobRequest) returns (GetMigrationJobResponse);
-
-    rpc InformStateChange (InformStateChangeRequest) returns (InformStateChangeResponse);
+    rpc UpdateStage (UpdateStageRequest) returns (UpdateStageResponse);
 }
 
-message InformStateChangeRequest {
+enum MigrationState {
+    // Container runs on source host
+    pending         = 0;
+    preparing       = 1;
+
+    // Container runs on no host
+    checkpointing   = 2;
+    transfering     = 3;
+    restoring       = 4;
+
+    // Container runs on destination host
+    cleaning        = 5;
+
+    // Done states
+    succeded        = 6;
+    failed          = 7;
+}
+
+enum MigrationMethod {
+    cold = 0;
+}
+
+enum MigrationRole {
+    source = 0;
+    destination = 1;
+    controller = 3;
+}
+
+message IPAddress {
+    string address = 1;
+    int32 port = 2;
+}
+
+message CreateJobRequest {
+    // Addresses of the source and destination
+    IPAddress source = 1;
+    IPAddress destination = 2;
+    
+    // Either specify the container name or container id
+    string container_name  = 3;
+    
+    // User's of the hosts
+    string source_user = 5;
+    string destination_user = 6;
+
+    // Method of migration, Cold, Lazy, Iterative.
+    MigrationMethod migration_method = 7;
+
+    // The side who sent the creation request. Controller
+    // or source host.
+    MigrationRole requested_by = 8;
+    
+    // Requested migration id
+    string migration_id = 9;
+}
+
+message CreateJobResponse {
+
+}
+
+message Job {
+    // Migration id
     string migration_id = 1;
-    string finished_state = 2;
-    string next_state = 3;
-    optional string error_string = 4;
-}
 
-message InformStateChangeResponse {
-    
-}
+    // Addresses of source and destination hosts.
+    IPAddress source = 2;
+    IPAddress destination = 3;
 
-enum Source {
-    MIGCTL = 0;
-    MIGRATORD = 1;
-}
+    // Method used for the migration
+    MigrationMethod migration_method = 4;
 
-message CreateMigrationJobRequest {
-    string container_id = 1;
-    string client_container_runtime = 2;
-    string server_container_runtime = 3;
-    string server_address = 4;
-    int32 server_port = 5;
-    string server_key = 6;
-    string server_user = 7;
-    string method = 8;
-}
+    // Migration stage
+    string migration_state = 7;
 
-message CreateMigrationJobResponse {
-    string migration_id = 1;
-    int64 creaton_unix_time = 2;
-}
+    // Error string if there exists any errors
+    optional string error_string = 8;
 
-message ShareMigrationJobRequest {
-    string container_id = 1;
-    string client_container_runtime = 2;
-    string server_container_runtime = 3;
-    string client_address = 4;
-    int32 client_port = 5;
-    string server_key = 6;
-    string server_user = 7;
-    string method = 8;
-}
+    // Is the container running on any of the hosts
+    bool offline = 9;
 
-message ShareMigrationJobResponse {
-    string migration_id = 1;
-    int64 creaton_unix_time = 2;
-}
-
-// message SyncNotificationRequest {
-//     string migration_id = 1;
-    
-//     string state_finished = 2;
-//     string state_next = 3;
-    
-//     string error_message = 4;
-//     bool finished_successful = 5;
-    
-//     string migration_role = 6;
-// }
-
-// message SyncNotificationResponse {
-    
-// }
-
-
-message GetMigrationJobRequest {
-}
-
-message GetMigrationJobResponse {
-    repeated MigrationJob jobs = 1;
-}
-message MigrationJob {
-    string migration_id = 1;
-    string client_address = 2;
-    string server_address = 3;
-
-    int32 client_port = 4;
-    int32 server_port = 5;
-
-    string cotniner_id = 6;
-
-    string migration_status = 7;
-    string error_string = 8;
-
-    bool running = 9;
-
+    // Creation date of the migration
     string creation_date = 10;
-    string role = 11;
-    string migration_method = 12;
+
+    // Role of the host on the migration
+    MigrationRole role = 11;
+}
+
+message ListJobsRequest {
+    
+}
+
+message ListJobsResponse {
+    repeated Job jobs = 1;
+    optional string error_string = 2;
+}
+
+message UpdateStageRequest {
+    // Migration id
+    string migration_id = 1;
+    
+    // State finished and next
+    MigrationState state_finished = 2;
+    MigrationState state_next = 3;
+
+    // If the container is offline on the host
+    bool offline = 4;
+
+    optional string error_string = 5;
+}
+
+message UpdateStageResponse {
+    
 }

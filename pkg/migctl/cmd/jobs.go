@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var nodePort int
+var port int
 
 var jobsCmd = &cobra.Command{
 	Use:   "jobs [OPTIONS] [migratord address]",
@@ -23,51 +23,38 @@ var jobsCmd = &cobra.Command{
 			fmt.Println("migctl job requires two arguments: [migratord address]")
 			return
 		}
-		nodeAddress := args[0]
+		address := args[0]
 
-		migrator := fmt.Sprintf("%s:%d", nodeAddress, nodePort)
-		conn, err := grpc.Dial(migrator, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		fullAddress := fmt.Sprintf("%s:%d", address, port)
+		conn, err := grpc.Dial(fullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 		if err != nil {
-			fmt.Printf("Cannot reach the migratord client on %s\n", migrator)
+			fmt.Printf("Cannot reach the migratord client on %s\n", fullAddress)
 			return
 		}
 
 		client := pb.NewMigratorServiceClient(conn)
 		defer conn.Close()
 
-		// Do not include servers private key
-		resp, err := client.GetMigrationJob(context.Background(), &pb.GetMigrationJobRequest{})
+		resp, err := client.ListJobs(context.Background(), &pb.ListJobsRequest{})
 
 		if err != nil {
-			fmt.Printf("Cannot get migration job on %s\n", migrator)
-			fmt.Printf("	Error: %v\n", err)
+			fmt.Printf("Cannot get migration job on %v: %v\n", fullAddress, err)
 			return
 		}
 
-		// resp := pb.GetMigrationJobResponse{
-		// 	Jobs: []*pb.MigrationJob{
-		// 		&pb.MigrationJob{
-		// 			MigrationId:     "1324134123123",
-		// 			CotninerId:      "323af34a21e09f",
-		// 			MigrationStatus: "preparing",
-		// 			CreationDate:    "10.10.2022",
-		// 			Role:            "client",
-		// 			MigrationMethod: "basic",
-		// 		},
-		// 	},
-		// }
-
 		w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\n", "Migration ID", "Container", "Stage", "Creation Date", "Role", "Method")
-		for _, mj := range resp.Jobs {
-			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\n", mj.MigrationId, mj.CotninerId, mj.MigrationStatus, mj.CreationDate, mj.Role, mj.MigrationMethod)
+		fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\n", "Migration ID", "Running on Host", "Stage", "Creation Date", "Role", "Method")
+
+		for _, job := range resp.GetJobs() {
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t%v\t%v\n", job.MigrationId, !job.Offline, job.MigrationState, job.CreationDate, job.Role, job.MigrationMethod)
 		}
+
 		w.Flush()
 	},
 }
 
 func init() {
-	jobsCmd.Flags().IntVar(&nodePort, "port", 9213, "Port of the node we want to list migrations.")
+	jobsCmd.Flags().IntVar(&port, "port", 9213, "Port of the node we want to list migrations.")
 	rootCmd.AddCommand(jobsCmd)
 }
