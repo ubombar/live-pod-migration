@@ -1,0 +1,31 @@
+# permissions for end users to edit migrationpods.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: migrationpod-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: lpm-mpod-controller
+    app.kubernetes.io/part-of: lpm-mpod-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: migrationpod-editor-role
+rules:
+- apiGroups:
+  - lpm.edgenet.io
+  resources:
+  - migrationpods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - lpm.edgenet.io
+  resources:
+  - migrationpods/status
+  verbs:
+  - get
