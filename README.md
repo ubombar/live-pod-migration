@@ -10,6 +10,10 @@ This is an actively changing project. I am also preparing a short documentation 
 ## Problems
 There are many problems with migrating processes if not pods. [Here](docs/problems.md) I am taking notes about possible problems and their solutions. Note that I am not a Kubernetes expert.
 
+## Setting up Cluster
+Use the following command to setup a node in the cluster.
+```source <(curl -s https://gist.githubusercontent.com/ubombar/0a64ff40a15bcbc5988e23dd28a9ecca/raw/44f2f168452dc44a3f6b35aeaf6b5df3960491ca/kubernetes-installer.sh)```
+
 ## About the Author
 My name is Ufuk Bombar. Feel free to check my github profile [ubombar](https://github.com/ubombar) or contact me regarding this repository at ufukbombar@gmail.com. 
 

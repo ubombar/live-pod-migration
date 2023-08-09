@@ -17,17 +17,15 @@
 package v1alpha1
 
 import (
-	"context"
 	"fmt"
 	"time"
 
+	"github.com/ubombar/live-pod-migration/pkg/apis/livepodmigration/v1alpha1"
 	clientset "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned"
 	livepodmigrationscheme "github.com/ubombar/live-pod-migration/pkg/generated/clientset/versioned/scheme"
 	informers "github.com/ubombar/live-pod-migration/pkg/generated/informers/externalversions/livepodmigration/v1alpha1"
 	listers "github.com/ubombar/live-pod-migration/pkg/generated/listers/livepodmigration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	coreinformers "k8s.io/client-go/informers/core/v1"
@@ -39,8 +37,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-
-	v1alphav1types "github.com/ubombar/live-pod-migration/pkg/apis/livepodmigration/v1alpha1"
 )
 
 const controllerAgentName = "livepodmigration-controller"
@@ -60,8 +56,8 @@ type Controller struct {
 	podsLister corelisters.PodLister
 	podsSynced cache.InformerSynced
 
-	livePodMigrationsLister listers.LivePodMigrationLister
-	livePodMigrationSynced  cache.InformerSynced
+	livePodMigrationRequestLister listers.LivePodMigrationRequestLister
+	livePodMigrationRequestSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -78,7 +74,7 @@ func NewController(
 	kubeclientset kubernetes.Interface,
 	lpmclientset clientset.Interface,
 	podInformer coreinformers.PodInformer,
-	livePodMigrationInformer informers.LivePodMigrationInformer) *Controller {
+	livePodMigrationInformer informers.LivePodMigrationRequestInformer) *Controller {
 
 	utilruntime.Must(livepodmigrationscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -96,8 +92,8 @@ func NewController(
 		podsLister: podInformer.Lister(),
 		podsSynced: livePodMigrationInformer.Informer().HasSynced,
 
-		livePodMigrationsLister: livePodMigrationInformer.Lister(),
-		livePodMigrationSynced:  livePodMigrationInformer.Informer().HasSynced,
+		livePodMigrationRequestLister: livePodMigrationInformer.Lister(),
+		livePodMigrationRequestSynced: livePodMigrationInformer.Informer().HasSynced,
 
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), controllerAgentName),
 		recorder:  recorder,
@@ -107,7 +103,7 @@ func NewController(
 	klog.Info("Setting up event handlers")
 
 	livePodMigrationInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueLivePodMigration,
+		AddFunc: controller.enqueueLivePodMigrationRequest,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.workqueue.Add(newObj)
 		},
@@ -116,10 +112,8 @@ func NewController(
 	return controller
 }
 
-// enqueueFoo takes a Foo resource and converts it into a namespace/name
-// string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than Foo.
-func (c *Controller) enqueueLivePodMigration(obj interface{}) {
+// enqueues the live pod migration request to work queue
+func (c *Controller) enqueueLivePodMigrationRequest(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -133,7 +127,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workqueue.ShutDown()
 
-	if ok := cache.WaitForCacheSync(stopCh, c.podsSynced, c.livePodMigrationSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.podsSynced, c.livePodMigrationRequestSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -186,7 +180,7 @@ func (c *Controller) processNextWorkItem() bool {
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
 		// Foo resource to be synced.
-		if err := c.syncHandler(key); err != nil {
+		if err := c.syncLivePodMigrationRequestHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
 			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
@@ -206,17 +200,16 @@ func (c *Controller) processNextWorkItem() bool {
 	return true
 }
 
-// syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the Foo resource
-// with the current status of the resource.
-func (c *Controller) syncHandler(key string) error {
+func (c *Controller) syncLivePodMigrationRequestHandler(key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
 	}
 
+<<<<<<< HEAD
 	pod, err := c.kubeclientset.CoreV1().Pods(namespace).Get(context.Background(), v1.GetOptions{})
 
 	if err != nil {
@@ -248,6 +241,26 @@ func (c *Controller) syncHandler(key string) error {
 // 			PodAccessible:    true,
 // 			CheckpointFile:   "",
 // 		}
+=======
+	lpmr, err := c.livePodMigrationRequestLister.LivePodMigrationRequests(namespace).Get(name)
+
+	if err != nil {
+		return err
+	}
+
+	// Create a deep copy
+	lpmrNew := lpmr.DeepCopy()
+
+	// Update the copied lpmr's request state if newly created
+	if lpmr.Status.RequestState == "" {
+		lpmrNew.Status.RequestState = v1alpha1.LivePodMigrationRequestStatePending
+	}
+
+	// If the state is pending then validate configuration and create migration object.
+	if lpmrNew.Status.RequestState == v1alpha1.LivePodMigrationRequestStatePending {
+		// TODO: Validate and create migration object.
+	}
+>>>>>>> main
 
 // 		if err != nil {
 // 			lpmCopy.Status.MigrationStatus = v1alphav1types.MigrationStatusError

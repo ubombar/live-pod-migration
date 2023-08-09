@@ -1,9 +1,0 @@
-apiVersion: livepodmigration.edgenet.io/v1alpha1
-kind: LivePodMigration
-metadata:
-  name: lpm-demo1
-spec:
-  podNamespace: "default"
-  podName: "pod2"
-  destinationNode: "mentor-m02"
-  serviceName: "service"

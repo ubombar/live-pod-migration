@@ -51,8 +51,8 @@ type Migrator struct {
 	// sampleclientset is a clientset for our own API group
 	livepodmigrationclientset clientset.Interface
 
-	livePodMigrationsLister listers.LivePodMigrationLister
-	livePodMigrationSynced  cache.InformerSynced
+	livePodMigrationsRequestLister listers.LivePodMigrationRequestLister
+	livePodMigrationRequestSynced  cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -69,7 +69,7 @@ type Migrator struct {
 func NewMigrator(
 	kubeclientset kubernetes.Interface,
 	lpmclientset clientset.Interface,
-	livePodMigrationInformer informers.LivePodMigrationInformer) *Migrator {
+	livePodMigrationRequestInformer informers.LivePodMigrationRequestInformer) *Migrator {
 
 	utilruntime.Must(livepodmigrationscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -84,8 +84,8 @@ func NewMigrator(
 		kubeclientset:             kubeclientset,
 		livepodmigrationclientset: lpmclientset,
 
-		livePodMigrationsLister: livePodMigrationInformer.Lister(),
-		livePodMigrationSynced:  livePodMigrationInformer.Informer().HasSynced,
+		livePodMigrationsRequestLister: livePodMigrationRequestInformer.Lister(),
+		livePodMigrationRequestSynced:  livePodMigrationRequestInformer.Informer().HasSynced,
 
 		workqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), controllerAgentName),
 		recorder:  recorder,
@@ -94,9 +94,9 @@ func NewMigrator(
 	// Setting up event handlers
 	klog.Info("Setting up event handlers")
 
-	livePodMigrationInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	livePodMigrationRequestInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			// Check for updates here
+
 		},
 	})
 
@@ -107,7 +107,7 @@ func (m *Migrator) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer m.workqueue.ShutDown()
 
-	if ok := cache.WaitForCacheSync(stopCh, m.livePodMigrationSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, m.livePodMigrationRequestSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -186,7 +186,7 @@ func (m *Migrator) syncHandler(key string) error {
 	}
 
 	// Get the Foo resource with this namespace/name
-	lpm, err := m.livePodMigrationsLister.LivePodMigrations(namespace).Get(name)
+	lpm, err := m.livePodMigrationsRequestLister.LivePodMigrationRequests(namespace).Get(name)
 	if err != nil {
 		// The Foo resource may no longer exist, in which case we stop
 		// processing.
