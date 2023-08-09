@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+option go_package = ".";
+
+service MigratorService {
+    rpc CreateMigrationJob (CreateMigrationJobRequest) returns (CreateMigrationJobResponse);
+
+    rpc ShareMigrationJob (ShareMigrationJobRequest) returns (ShareMigrationJobResponse);
+
+    // rpc SyncNotification (SyncNotificationRequest) returns (SyncNotificationResponse);
+
+    rpc GetMigrationJob (GetMigrationJobRequest) returns (GetMigrationJobResponse);
+
+    rpc InformStateChange (InformStateChangeRequest) returns (InformStateChangeResponse);
+}
+
+message InformStateChangeRequest {
+    string migration_id = 1;
+    string finished_state = 2;
+    string next_state = 3;
+    optional string error_string = 4;
+}
+
+message InformStateChangeResponse {
+    
+}
+
+enum Source {
+    MIGCTL = 0;
+    MIGRATORD = 1;
+}
+
+message CreateMigrationJobRequest {
+    string container_id = 1;
+    string client_container_runtime = 2;
+    string server_container_runtime = 3;
+    string server_address = 4;
+    int32 server_port = 5;
+    string server_key = 6;
+    string server_user = 7;
+    string method = 8;
+}
+
+message CreateMigrationJobResponse {
+    string migration_id = 1;
+    int64 creaton_unix_time = 2;
+}
+
+message ShareMigrationJobRequest {
+    string container_id = 1;
+    string client_container_runtime = 2;
+    string server_container_runtime = 3;
+    string client_address = 4;
+    int32 client_port = 5;
+    string server_key = 6;
+    string server_user = 7;
+    string method = 8;
+}
+
+message ShareMigrationJobResponse {
+    string migration_id = 1;
+    int64 creaton_unix_time = 2;
+}
+
+// message SyncNotificationRequest {
+//     string migration_id = 1;
+    
+//     string state_finished = 2;
+//     string state_next = 3;
+    
+//     string error_message = 4;
+//     bool finished_successful = 5;
+    
+//     string migration_role = 6;
+// }
+
+// message SyncNotificationResponse {
+    
+// }
+
+
+message GetMigrationJobRequest {
+}
+
+message GetMigrationJobResponse {
+    repeated MigrationJob jobs = 1;
+}
+message MigrationJob {
+    string migration_id = 1;
+    string client_address = 2;
+    string server_address = 3;
+
+    int32 client_port = 4;
+    int32 server_port = 5;
+
+    string cotniner_id = 6;
+
+    string migration_status = 7;
+    string error_string = 8;
+
+    bool running = 9;
+
+    string creation_date = 10;
+    string role = 11;
+    string migration_method = 12;
+}
