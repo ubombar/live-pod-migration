@@ -2,6 +2,7 @@
 [Watch the demo](https://youtu.be/7GHJsDL4Bt0)
 
 ## Demo in Command Line
+Here is the script used in the demo video.
 
 To create a simple stateful container, the following command can be used. 
 
