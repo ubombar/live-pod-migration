@@ -1,5 +1,8 @@
-# lpm-mpod-controller
-[Watch the demo](https://youtu.be/7GHJsDL4Bt0)
+# Live Pod Migration
+
+See the demo below!
+
+[![Watch the video](https://img.youtube.com/vi/7GHJsDL4Bt0/0.jpg)](https://www.youtube.com/watch?v=7GHJsDL4Bt0)
 
 ## Demo in Command Line
 Here is the script used in the demo video.
